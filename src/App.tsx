@@ -1,44 +1,29 @@
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import Navbar from "./components/NavBar";
+import { WrongNetwork } from "./components/WrongNetwork";
+import { useWallet } from "./context/WalletContext";
+
 
 function App() {
-  const account = useAccount()
-  const { connectors, connect, status, error } = useConnect()
-  const { disconnect } = useDisconnect()
+	const { account, chainId, network, isWrongNetwork } = useWallet();
+
+  if (isWrongNetwork) {
+		return <WrongNetwork />;
+	}
 
   return (
     <>
-      <div>
-        <h2>Account</h2>
-
-        <div>
-          status: {account.status}
-          <br />
-          addresses: {JSON.stringify(account.addresses)}
-          <br />
-          chainId: {account.chainId}
-        </div>
-
-        {account.status === 'connected' && (
-          <button type="button" onClick={() => disconnect()}>
-            Disconnect
-          </button>
-        )}
-      </div>
-
-      <div>
-        <h2>Connect</h2>
-        {connectors.map((connector) => (
-          <button
-            key={connector.uid}
-            onClick={() => connect({ connector })}
-            type="button"
-          >
-            {connector.name}
-          </button>
-        ))}
-        <div>{status}</div>
-        <div>{error?.message}</div>
-      </div>
+      <div className="w-full h-screen flex flex-col">
+			<Navbar />
+			{/* Main content */}
+			<div className="flex px-8 flex-col h-full w-full items-center justify-center bg-base-100">
+				{account.isConnected && account.address && network && chainId ? (
+					<>
+					</>
+				) : (
+					<h1 className="text-xl font-bold">Please connect your wallet to continue</h1>
+				)}
+			</div>
+		</div>
     </>
   )
 }
