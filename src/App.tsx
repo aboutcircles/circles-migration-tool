@@ -1,6 +1,7 @@
 import Navbar from "./components/NavBar";
 import { WrongNetwork } from "./components/WrongNetwork";
 import { useWallet } from "./context/WalletContext";
+import { Dashboard } from "./components/Dashboard";
 
 
 function App() {
@@ -15,10 +16,9 @@ function App() {
       <div className="w-full h-screen flex flex-col">
 			<Navbar />
 			{/* Main content */}
-			<div className="flex px-8 flex-col h-full w-full items-center justify-center bg-base-100">
+			<div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
 				{account.isConnected && account.address && network && chainId ? (
-					<>
-					</>
+					<Dashboard address={account.address} network={network} />
 				) : (
 					<h1 className="text-xl font-bold">Please connect your wallet to continue</h1>
 				)}
