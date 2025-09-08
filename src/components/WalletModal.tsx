@@ -28,7 +28,7 @@ export default function WalletModal() {
 
     return (
         <>
-            {account.isConnected && account.address && network && chainId && chainName ? (
+            {account.isConnected && account.address ? (
                 <button
                     className="btn btn-ghost flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-base-300/50 transition-all duration-200"
                     onClick={() => openModal('main')}
@@ -47,7 +47,7 @@ export default function WalletModal() {
 
             {/* Modal */}
             <dialog ref={modalRef} className="modal">
-                <div className="modal-box max-w-2xl p-0">
+                <div className={`modal-box ${currentView === 'main' ? 'max-w-lg' : 'max-w-2xl'} p-0`}>
                     {currentView === 'main' && account.address && (
                         <AccountView
                             address={account.address}

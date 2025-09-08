@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 
 interface AccountViewProps {
@@ -31,21 +31,10 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
                             {connectedChain}
                         </p>
                     </div>
-                    <div className="badge badge-info badge-sm">Connected</div>
+                    <button onClick={handleDisconnect} className="btn btn-sm btn-outline btn-error">
+                        Disconnect <X size={16} />
+                    </button>
                 </div>
-            </div>
-
-            {/* Actions Section */}
-            <div className="px-6 py-4 space-y-3">
-                <button
-                    onClick={handleDisconnect}
-                    className="btn btn-outline btn-error btn-sm w-full gap-2"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                    </svg>
-                    Disconnect Wallet
-                </button>
             </div>
 
             {/* External Links Section */}
