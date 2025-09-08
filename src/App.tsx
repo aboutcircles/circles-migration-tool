@@ -7,25 +7,25 @@ import { Dashboard } from "./components/Dashboard";
 function App() {
 	const { account, isWrongNetwork } = useWallet();
 
-  if (isWrongNetwork) {
+	if (isWrongNetwork) {
 		return <WrongNetwork />;
 	}
 
-  return (
-    <>
-      <div className="w-full h-screen flex flex-col">
-			<Navbar />
-			{/* Main content */}
-			<div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-				{account.isConnected && account.address ? (
-					<Dashboard address={account.address} />
-				) : (
-					<h1 className="text-xl font-bold">Please connect your wallet to continue</h1>
-				)}
+	return (
+		<>
+			<div className="w-full h-screen flex flex-col">
+				<Navbar />
+				{/* Main content */}
+				<div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+					{account.isConnected && account.address ? (
+						<Dashboard address={account.address} />
+					) : (
+						<h1 className="text-xl font-bold">Please connect your wallet to continue</h1>
+					)}
+				</div>
 			</div>
-		</div>
-    </>
-  )
+		</>
+	)
 }
 
 export default App

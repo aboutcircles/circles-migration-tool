@@ -1,17 +1,19 @@
 import { Address } from "viem";
 import { MigrationFlow } from "./MigrationFlow";
 import { useCircles } from "../context/CirclesContext";
+import { MigrationCompleted } from "./MigrationCompleted";
 
 export function Dashboard({ address }: { address: Address }) {
-    const { 
-        userToken, 
-        isRegisteredOnV1, 
-        isRegisteredOnV2, 
-        isLoadingMigrationData,
-        migrationError 
+    const {
+        userToken,
+        profile,
+        isRegisteredOnV1,
+        isRegisteredOnV2,
+        isLoadingAvatarData,
+        avatarError
     } = useCircles();
 
-    if (isLoadingMigrationData) {
+    if (isLoadingAvatarData) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
@@ -29,36 +31,35 @@ export function Dashboard({ address }: { address: Address }) {
         );
     }
 
-    if (migrationError) {
+    if (avatarError) {
         return (
             <div className="max-w-4xl mx-auto p-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
                     <p className="text-red-600">
-                        Impossible to check your status on Circles: {migrationError}
+                        Impossible to check your status on Circles: {avatarError}
                     </p>
                 </div>
             </div>
         );
     }
 
-    if(isRegisteredOnV1 && isRegisteredOnV2) {
+    if (isRegisteredOnV1 && isRegisteredOnV2) {
         return (
             <div className="max-w-4xl w-full mx-auto p-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h2 className="text-lg font-semibold text-green-800 mb-2">Success</h2>
-                    <p className="">
-                        Migration already completed
-                    </p>
-                </div>
+                <MigrationCompleted
+                    profile={profile}
+                    address={address}
+                    userToken={userToken || ""}
+                />
             </div>
         );
     }
 
-    if(isRegisteredOnV1 && !isRegisteredOnV2) {
+    if (isRegisteredOnV1 && !isRegisteredOnV2) {
         return (
             <div className="max-w-4xl w-full mx-auto p-6">
-                <MigrationFlow 
+                <MigrationFlow
                     address={address}
                     userToken={userToken || ""}
                 />
@@ -77,5 +78,5 @@ export function Dashboard({ address }: { address: Address }) {
             </div>
         </div>
     );
-    
+
 }

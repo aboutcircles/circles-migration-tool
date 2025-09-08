@@ -1,79 +1,76 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Profiles, type SearchResultProfile } from '@circles-sdk/profiles';
+import { Profile, Profiles } from '@circles-sdk/profiles';
+import { AvatarRow, CirclesData, CirclesRpc } from "@circles-sdk/data";
 import { useWallet } from './WalletContext';
-import { useReadContracts } from "wagmi";
-import v1HubABI from "../abi/v1Hub";
-import v2HubABI from "../abi/v2Hub";
 
 interface CirclesContextType {
-  profile: SearchResultProfile | null;
+  profile: Profile;
   tokenBalance: bigint | null;
   trustConnections: number | null;
   isLoadingProfile: boolean;
   profileError: string | null;
+  avatarData: AvatarRow | undefined;
+  isLoadingAvatarData: boolean;
+  avatarError: string | null;
   userToken: string | null;
   avatarAddress: string | null;
   isRegisteredOnV1: boolean;
   isRegisteredOnV2: boolean;
-  isLoadingMigrationData: boolean;
-  migrationError: string | null;
 }
+
+const fallbackProfile: Profile = {
+  name: "Fallback Profile",
+  previewImageUrl: "https://via.placeholder.com/150",
+};
 
 const CirclesContext = createContext<CirclesContextType | null>(null);
 
 export function CirclesProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfile] = useState<SearchResultProfile | null>(null);
+  const [profile, setProfile] = useState<Profile>(fallbackProfile);
   const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
   const [trustConnections, setTrustConnections] = useState<number | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  
-  const { account, network } = useWallet();
+  const [avatarData, setAvatarData] = useState<AvatarRow | undefined>();
+  const [isLoadingAvatarData, setIsLoadingAvatarData] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const { account } = useWallet();
   const profileService = new Profiles("https://rpc.aboutcircles.com/profiles/");
+  const circlesRpc = new CirclesRpc("https://rpc.aboutcircles.com/");
+  const data = new CirclesData(circlesRpc);
 
-  const v1HubContract = network ? {
-    address: network.v1HubAddress,
-    abi: v1HubABI,
-  } as const : null;
-  
-  const v2HubContract = network ? {
-    address: network.v2HubAddress,
-    abi: v2HubABI,
-  } as const : null;
+  const userToken = avatarData?.v1Token || null;
+  const avatarAddress = avatarData?.avatar || null;
+  const isRegisteredOnV1 = Boolean(avatarData?.hasV1);
+  const isRegisteredOnV2 = Boolean(avatarData?.version === 2);
 
-  const {
-    data: migrationData,
-    error: migrationError,
-    isPending: isLoadingMigrationData
-  } = useReadContracts({
-    contracts: account.address && v1HubContract && v2HubContract ? [{
-      ...v1HubContract,
-      functionName: 'userToToken',
-      args: [account.address],
-    }, {
-      ...v2HubContract,
-      functionName: 'avatars',
-      args: [account.address],
-    }, {
-      ...v2HubContract,
-      functionName: 'isHuman',
-      args: [account.address],
-    }] : []
-  });
+  const fetchAvatarData = async (address: string) => {
+    setIsLoadingAvatarData(true);
+    setAvatarError(null);
 
-  const userToken = migrationData?.[0]?.result as string || null;
-  const avatarAddress = migrationData?.[1]?.result as string || null;
-  const isRegisteredOnV1 = Boolean(userToken && userToken !== "0x0000000000000000000000000000000000000000");
-  const isRegisteredOnV2 = Boolean(avatarAddress && avatarAddress !== "0x0000000000000000000000000000000000000000");
+    try {
+      const fetchedAvatarData = await data.getAvatarInfo(address.toLowerCase() as `0x${string}`);
+      console.log('avatarData', fetchedAvatarData, address);
+      setAvatarData(fetchedAvatarData);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch avatar data';
+      setAvatarError(errorMessage);
+      console.error('Error fetching avatar data:', error);
+    } finally {
+      setIsLoadingAvatarData(false);
+    }
+  };
 
-  const fetchProfile = async (address: string) => {
+  const fetchProfile = async (cidV0: string) => {
     setIsLoadingProfile(true);
     setProfileError(null);
-    
+
     try {
-      const profileData = await profileService.searchByAddress(address);
-      // searchByAddress returns an array, we take the first result
-      setProfile(profileData && profileData.length > 0 ? profileData[0] : null);
+      const profileData = await profileService.get(cidV0);
+      if (profileData) {
+        setProfile(profileData);
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch profile';
       setProfileError(errorMessage);
@@ -83,17 +80,24 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Fetch profile when address changes
   useEffect(() => {
     if (account.isConnected && account.address) {
-      fetchProfile(account.address);
+      fetchAvatarData(account.address);
     } else {
-      setProfile(null);
+      setAvatarData(undefined);
+      setProfile(fallbackProfile);
       setTokenBalance(null);
       setTrustConnections(null);
       setProfileError(null);
+      setAvatarError(null);
     }
   }, [account.isConnected, account.address]);
+
+  useEffect(() => {
+    if (avatarData?.cidV0) {
+      fetchProfile(avatarData.cidV0);
+    }
+  }, [avatarData]);
 
   const value = {
     profile,
@@ -101,12 +105,13 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     trustConnections,
     isLoadingProfile,
     profileError,
+    avatarData,
+    isLoadingAvatarData,
+    avatarError,
     userToken,
     avatarAddress,
     isRegisteredOnV1,
     isRegisteredOnV2,
-    isLoadingMigrationData,
-    migrationError: migrationError?.message || null,
   };
 
   return <CirclesContext.Provider value={value}>{children}</CirclesContext.Provider>;
