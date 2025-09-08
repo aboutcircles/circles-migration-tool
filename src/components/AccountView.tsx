@@ -1,3 +1,4 @@
+import { ArrowUpRight } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 
 interface AccountViewProps {
@@ -52,31 +53,23 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
                 <div className="px-6 py-3">
                     <h4 className="text-sm font-medium text-base-content/70 mb-3">External Links</h4>
                     <div className="space-y-1">
+                        <a 
+                            href="https://app.metri.xyz/welcome"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-between w-full p-2 text-sm rounded-lg hover:bg-base-200 transition-colors duration-200 group"
+                        >
+                            <span>Join Circles</span>
+                            <ArrowUpRight size={16} />
+                        </a>
                         <a
-                            href="https://discord.gg/gnosis"
+                            href="https://discord.com/invite/aboutcircles"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center justify-between w-full p-2 text-sm rounded-lg hover:bg-base-200 transition-colors duration-200 group"
                         >
                             <span>Get Help</span>
-                            <img
-                                src="/external.svg"
-                                alt="External Link"
-                                className="w-3 h-3 opacity-50 group-hover:opacity-70 transition-opacity"
-                            />
-                        </a>
-                        <a
-                            href="https://www.gnosis.io/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-between w-full p-2 text-sm rounded-lg hover:bg-base-200 transition-colors duration-200 group"
-                        >
-                            <span>Explore Gnosis</span>
-                            <img
-                                src="/external.svg"
-                                alt="External Link"
-                                className="w-3 h-3 opacity-50 group-hover:opacity-70 transition-opacity"
-                            />
+                            <ArrowUpRight size={16} />
                         </a>
                     </div>
                 </div>
