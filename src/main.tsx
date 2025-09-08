@@ -9,6 +9,7 @@ import { config } from './wagmi.ts'
 import './index.css'
 import { WalletProvider } from './context/WalletContext.tsx'
 import { Toaster } from 'react-hot-toast'
+import { CirclesProvider } from './context/CirclesContext.tsx'
 
 const queryClient = new QueryClient()
 
@@ -17,8 +18,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <WalletProvider>
-          <App />
-          <Toaster />
+          <CirclesProvider>
+            <App />
+            <Toaster />
+          </CirclesProvider>
         </WalletProvider>
       </QueryClientProvider>
     </WagmiProvider>

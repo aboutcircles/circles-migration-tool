@@ -1,50 +1,17 @@
 import { Address } from "viem";
-import { NetworkConfig } from "../types/network";
-import v1HubABI from "../abi/v1Hub";
-import { useReadContracts } from "wagmi";
-import v2HubABI from "../abi/v2Hub";
 import { MigrationFlow } from "./MigrationFlow";
+import { useCircles } from "../context/CirclesContext";
 
-export function Dashboard({ address, network }: { address: Address, network: NetworkConfig }) {
+export function Dashboard({ address }: { address: Address }) {
+    const { 
+        userToken, 
+        isRegisteredOnV1, 
+        isRegisteredOnV2, 
+        isLoadingMigrationData,
+        migrationError 
+    } = useCircles();
 
-    const v1HubContract = {
-        address: network.v1HubAddress,
-        abi: v1HubABI,
-      } as const
-      const v2HubContract = {
-        address: network.v2HubAddress,
-        abi: v2HubABI,
-      } as const
-
-    const {
-        data,
-        error,
-        isPending
-    } = useReadContracts({
-        contracts: [{
-            ...v1HubContract,
-            functionName: 'userToToken',
-            args: [address],
-        }, {
-            ...v2HubContract,
-            functionName: 'avatars',
-            args: [address],
-        }, {
-            ...v2HubContract,
-            functionName: 'isHuman',
-            args: [address],
-        }]
-    })
-
-    const userToken = data?.[0];
-    const avatars = data?.[1];
-    // const isHuman = data?.[2];
-
-    const isRegisteredOnV1 = userToken && userToken.result !== "0x0000000000000000000000000000000000000000";
-    const isRegisteredOnV2 = avatars && avatars.result !== "0x0000000000000000000000000000000000000000";
-    // const isHumanOnV2 = isHuman && isHuman.result === true;
-
-    if (isPending) {
+    if (isLoadingMigrationData) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
@@ -62,13 +29,13 @@ export function Dashboard({ address, network }: { address: Address, network: Net
         );
     }
 
-    if (error) {
+    if (migrationError) {
         return (
             <div className="max-w-4xl mx-auto p-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
                     <p className="text-red-600">
-                        Impossible to check your status on Circles v1: {error.message}
+                        Impossible to check your status on Circles: {migrationError}
                     </p>
                 </div>
             </div>
@@ -93,7 +60,7 @@ export function Dashboard({ address, network }: { address: Address, network: Net
             <div className="max-w-4xl w-full mx-auto p-6">
                 <MigrationFlow 
                     address={address}
-                    userToken={userToken?.result as string}
+                    userToken={userToken || ""}
                 />
             </div>
         );

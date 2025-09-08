@@ -5,7 +5,7 @@ import { Dashboard } from "./components/Dashboard";
 
 
 function App() {
-	const { account, chainId, network, isWrongNetwork } = useWallet();
+	const { account, isWrongNetwork } = useWallet();
 
   if (isWrongNetwork) {
 		return <WrongNetwork />;
@@ -17,8 +17,8 @@ function App() {
 			<Navbar />
 			{/* Main content */}
 			<div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-				{account.isConnected && account.address && network && chainId ? (
-					<Dashboard address={account.address} network={network} />
+				{account.isConnected && account.address ? (
+					<Dashboard address={account.address} />
 				) : (
 					<h1 className="text-xl font-bold">Please connect your wallet to continue</h1>
 				)}
