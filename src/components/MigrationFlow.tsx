@@ -2,38 +2,40 @@ import { Address } from "viem";
 import { useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import { truncateAddress } from "../utils/address";
+import { Profile } from "@circles-sdk/profiles";
 
 interface MigrationFlowProps {
     address: Address;
     userToken: string;
+    profile: Profile;
+    state: "not-registered" | "registered-v2" | "migrated" | "migrating";
 }
 
-export function MigrationFlow({ address, userToken }: MigrationFlowProps) {
+const statuses = {
+    "not-registered": {
+        title: "Not Registered",
+        description: "Your v1 account has not been registered on Circles",
+        status: "Not Registered",
+    },
+    "registered-v2": {
+        title: "Registered on v2",
+        description: "Your v1 account has been registered on Circles v2",
+        status: "Registered on v2",
+    },
+    "migrated": {
+        title: "Migrated",
+        description: "Your v1 account has been migrated to v2",
+        status: "Migrated",
+    },
+    "migrating": {
+        title: "Migrating",
+        description: "Your v1 account is being migrated to v2",
+        status: "Ready",
+    },
+};
+
+export function MigrationFlow({ address, userToken, profile, state }: MigrationFlowProps) {
     const [copied, setCopied] = useState(false);
-
-    // Fetch balance and trust data
-    //   const { data: migrationData, isLoading } = useReadContracts({
-    //     contracts: [
-    //       // Get token balance
-    //       {
-    //         address: userToken as Address,
-    //         abi: erc20ABI,
-    //         functionName: 'balanceOf',
-    //         args: [address],
-    //       },
-    //       // Get token decimals
-    //       {
-    //         address: userToken as Address,
-    //         abi: erc20ABI,
-    //         functionName: 'decimals',
-    //       },
-    //       // We can't easily get trust count from the v1 Hub directly
-    //       // For now, we'll use a placeholder or implement a more complex solution
-    //     ]
-    //   });
-
-    // const balance = migrationData?.[0]?.result;
-    // const decimals = migrationData?.[1]?.result || 18;
     const balance = 0;
 
     const handleCopy = async () => {
@@ -46,23 +48,18 @@ export function MigrationFlow({ address, userToken }: MigrationFlowProps) {
         }
     };
 
-    const handleStartMigration = () => {
-        // TODO: Implement actual migration logic
-        console.log("Starting migration process...");
-    };
-
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
             {/* Status Header */}
             <div className="bg-green-50 border-b border-green-100 px-6 py-4">
                 <div className="flex items-center">
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900">Ready to migrate</h2>
-                        <p className="text-sm text-gray-600">Your v1 account is ready for migration to v2</p>
+                        <h2 className="text-lg font-semibold text-gray-900">{statuses[state].title}</h2>
+                        <p className="text-sm text-gray-600">{statuses[state].description}</p>
                     </div>
                     <div className="ml-auto">
                         <span className="badge badge-sm badge-success">
-                            Ready
+                            {statuses[state].status}
                         </span>
                     </div>
                 </div>
@@ -73,9 +70,16 @@ export function MigrationFlow({ address, userToken }: MigrationFlowProps) {
                 <div>
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Avatar</h3>
                     <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
-                        <span className="font-mono text-sm text-gray-900">
-                            {truncateAddress(address)}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                            <img src={profile.previewImageUrl} alt="Avatar" className="w-10 h-10 rounded-full" />
+                            <div className="flex flex-col space-x-2">
+                                {profile.name}
+                                <span className="font-mono text-sm text-gray-900">
+                                    {truncateAddress(address)}
+                                </span>
+                            </div>
+                        </div>
+
                         <div className="flex items-center space-x-2">
                             <button
                                 onClick={handleCopy}
@@ -118,14 +122,15 @@ export function MigrationFlow({ address, userToken }: MigrationFlowProps) {
                     </div>
                 </div>
 
-                {/* Migration Button */}
-                <button
-                    onClick={handleStartMigration}
+                <a
+                    href={`https://app.metri.xyz/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="btn btn-primary mx-auto"
                 >
-                    Start Migration Process
-                </button>
+                    Go to Metri
+                </a>
             </div>
-        </div>
+        </div >
     );
 }

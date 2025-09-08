@@ -1,7 +1,6 @@
 import { Address } from "viem";
 import { MigrationFlow } from "./MigrationFlow";
 import { useCircles } from "../context/CirclesContext";
-import { MigrationCompleted } from "./MigrationCompleted";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -43,29 +42,16 @@ export function Dashboard({ address }: { address: Address }) {
             </div>
         );
     }
-
-    if (isRegisteredOnV1 && isRegisteredOnV2) {
-        return (
-            <div className="max-w-4xl w-full mx-auto p-6">
-                <MigrationCompleted
-                    profile={profile}
-                    address={address}
-                    userToken={userToken || ""}
-                />
-            </div>
-        );
-    }
-
-    if (isRegisteredOnV1 && !isRegisteredOnV2) {
-        return (
-            <div className="max-w-4xl w-full mx-auto p-6">
-                <MigrationFlow
-                    address={address}
-                    userToken={userToken || ""}
-                />
-            </div>
-        );
-    }
+    return (
+        <div className="max-w-4xl w-full mx-auto p-6">
+            <MigrationFlow
+                address={address}
+                userToken={userToken || ""}
+                profile={profile}
+                state={isRegisteredOnV1 && isRegisteredOnV2 ? "migrated" : isRegisteredOnV1 ? "migrating" : isRegisteredOnV2 ? "registered-v2" : "not-registered"}
+            />
+        </div>
+    );
 
     // Fallback for other cases
     return (
