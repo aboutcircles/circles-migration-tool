@@ -1,21 +1,47 @@
 import { Address } from "viem";
-import { useReadContract } from "wagmi";
 import { NetworkConfig } from "../types/network";
 import v1HubABI from "../abi/v1Hub";
+import { useReadContracts } from "wagmi";
+import v2HubABI from "../abi/v2Hub";
 
 export function Dashboard({ address, network }: { address: Address, network: NetworkConfig }) {
-    const {
-        data: userToken,
-        error,
-        isPending
-    } = useReadContract({
+
+    const v1HubContract = {
         address: network.v1HubAddress,
         abi: v1HubABI,
-        functionName: 'userToToken',
-        args: [address],
+      } as const
+      const v2HubContract = {
+        address: network.v2HubAddress,
+        abi: v2HubABI,
+      } as const
+
+    const {
+        data,
+        error,
+        isPending
+    } = useReadContracts({
+        contracts: [{
+            ...v1HubContract,
+            functionName: 'userToToken',
+            args: [address],
+        }, {
+            ...v2HubContract,
+            functionName: 'avatars',
+            args: [address],
+        }, {
+            ...v2HubContract,
+            functionName: 'isHuman',
+            args: [address],
+        }]
     })
 
-    const isRegisteredOnV1 = userToken && userToken !== "0x0000000000000000000000000000000000000000";
+    const userToken = data?.[0];
+    const avatars = data?.[1];
+    // const isHuman = data?.[2];
+
+    const isRegisteredOnV1 = userToken && userToken.result !== "0x0000000000000000000000000000000000000000";
+    const isRegisteredOnV2 = avatars && avatars.result !== "0x0000000000000000000000000000000000000000";
+    // const isHumanOnV2 = isHuman && isHuman.result === true;
 
     if (isPending) {
         return (
@@ -86,7 +112,7 @@ export function Dashboard({ address, network }: { address: Address, network: Net
                             <p className="text-green-700 mt-2">
                                 Your address is registered on Circles v1 with the token :
                                 <span className="font-mono text-sm bg-green-100 px-2 py-1 rounded ml-2">
-                                    {userToken}
+                                    {userToken?.result}
                                 </span>
                             </p>
                             <div className="mt-4">
