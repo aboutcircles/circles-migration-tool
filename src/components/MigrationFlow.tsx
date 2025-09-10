@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { Profile } from "@circles-sdk/profiles";
+import { TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 
 interface MigrationFlowProps {
     address: Address;
     profile: Profile;
+    circlesBalance: TokenBalanceRow[];
+    trustConnections: TrustRelationRow[];
     state: "not-registered" | "registered-v2" | "migrated" | "migrating";
 }
 
@@ -27,15 +30,14 @@ const statuses = {
         status: "Migrated",
     },
     "migrating": {
-        title: "Migrating",
-        description: "Your v1 account is being migrated to v2",
+        title: "Ready to migrate",
+        description: "Your v1 account is ready to be migrated to v2",
         status: "Ready",
     },
 };
 
-export function MigrationFlow({ address, profile, state }: MigrationFlowProps) {
+export function MigrationFlow({ address, profile, state, circlesBalance, trustConnections }: MigrationFlowProps) {
     const [copied, setCopied] = useState(false);
-    const balance = 0;
 
     const handleCopy = async () => {
         try {
@@ -106,17 +108,17 @@ export function MigrationFlow({ address, profile, state }: MigrationFlowProps) {
                     {/* Balance */}
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Balance</h3>
-                        <div className="text-2xl font-semibold text-gray-900">
-                            {balance} CRC
+                        <div className="text-xl font-semibold text-gray-900">
+                            {circlesBalance.reduce((acc, balance) => acc + balance.circles, 0).toFixed(2)} CRC
                         </div>
                     </div>
 
                     {/* Trust Connections */}
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Trust Connections</h3>
-                        <div className="text-2xl font-semibold text-gray-900">
-                            {/* Placeholder */}
-                            <span className="text-gray-400">--</span> <span className="text-lg font-normal text-gray-500">trusts</span>
+                        <div className="text-xl font-semibold text-gray-900">
+                            {trustConnections.length} trust{trustConnections.length > 1 ? "s" : ""}
+                            {/* <span className="text-gray-400">--</span> <span className="text-lg font-normal text-gray-500">trusts</span> */}
                         </div>
                     </div>
                 </div>

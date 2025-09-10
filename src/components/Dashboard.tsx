@@ -6,6 +6,8 @@ export function Dashboard({ address }: { address: Address }) {
     const {
         profile,
         avatarData,
+        circlesBalance,
+        trustConnections,
         isLoadingAvatarData,
         avatarError
     } = useCircles();
@@ -40,26 +42,16 @@ export function Dashboard({ address }: { address: Address }) {
             </div>
         );
     }
+
     return (
         <div className="max-w-4xl w-full mx-auto p-6">
             <MigrationFlow
                 address={address}
                 profile={profile}
+                circlesBalance={circlesBalance || []}
+                trustConnections={trustConnections || []}
                 state={avatarData?.hasV1 && avatarData?.version === 2 ? "migrated" : avatarData?.hasV1 ? "migrating" : avatarData?.version === 2 ? "registered-v2" : "not-registered"}
             />
         </div>
     );
-
-    // Fallback for other cases
-    return (
-        <div className="max-w-4xl w-full mx-auto p-6">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h2 className="text-lg font-semibold text-yellow-800 mb-2">Not Ready</h2>
-                <p className="text-yellow-700">
-                    Please ensure you have a Circles v1 account to migrate.
-                </p>
-            </div>
-        </div>
-    );
-
 }

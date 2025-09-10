@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Profile, Profiles } from '@circles-sdk/profiles';
-import { AvatarRow, CirclesData, CirclesRpc } from "@circles-sdk/data";
+import { AvatarRow, CirclesData, CirclesRpc, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { useWallet } from './WalletContext';
 
 interface CirclesContextType {
   profile: Profile;
-  tokenBalance: bigint | null;
-  trustConnections: number | null;
+  circlesBalance: TokenBalanceRow[] | undefined;
+  trustConnections: TrustRelationRow[] | undefined;
   isLoadingProfile: boolean;
   profileError: string | null;
   avatarData: AvatarRow | undefined;
@@ -23,8 +23,8 @@ const CirclesContext = createContext<CirclesContextType | null>(null);
 
 export function CirclesProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>(fallbackProfile);
-  const [tokenBalance, setTokenBalance] = useState<bigint | null>(null);
-  const [trustConnections, setTrustConnections] = useState<number | null>(null);
+  const [circlesBalance, setCirclesBalance] = useState<TokenBalanceRow[] | undefined>();
+  const [trustConnections, setTrustConnections] = useState<TrustRelationRow[] | undefined>();
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [avatarData, setAvatarData] = useState<AvatarRow | undefined>();
@@ -36,13 +36,17 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const circlesRpc = new CirclesRpc("https://rpc.aboutcircles.com/");
   const data = new CirclesData(circlesRpc);
 
-  const fetchAvatarData = async (address: string) => {
+  const fetchAvatarData = async (address: `0x${string}`) => {
     setIsLoadingAvatarData(true);
     setAvatarError(null);
 
     try {
-      const fetchedAvatarData = await data.getAvatarInfo(address.toLowerCase() as `0x${string}`);
+      const fetchedAvatarData = await data.getAvatarInfo(address);
+      const fetchedCirclesBalance = await data.getTokenBalances(address);
+      const fetchedTrustConnections = await data.getAggregatedTrustRelations(address);
       setAvatarData(fetchedAvatarData);
+      setCirclesBalance(fetchedCirclesBalance);
+      setTrustConnections(fetchedTrustConnections);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch avatar data';
       setAvatarError(errorMessage);
@@ -76,8 +80,8 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     } else {
       setAvatarData(undefined);
       setProfile(fallbackProfile);
-      setTokenBalance(null);
-      setTrustConnections(null);
+      setCirclesBalance(undefined);
+      setTrustConnections(undefined);
       setProfileError(null);
       setAvatarError(null);
     }
@@ -91,7 +95,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
 
   const value = {
     profile,
-    tokenBalance,
+    circlesBalance,
     trustConnections,
     isLoadingProfile,
     profileError,
