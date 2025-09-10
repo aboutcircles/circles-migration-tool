@@ -34,7 +34,7 @@ const statuses = {
     },
 };
 
-export function MigrationFlow({ address, userToken, profile, state }: MigrationFlowProps) {
+export function MigrationFlow({ address, profile, state }: MigrationFlowProps) {
     const [copied, setCopied] = useState(false);
     const balance = 0;
 

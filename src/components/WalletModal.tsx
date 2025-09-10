@@ -9,7 +9,7 @@ import { Menu } from "lucide-react";
 export type ModalView = 'main' | 'circles-garden' | 'select-wallet';
 
 export default function WalletModal() {
-    const { account, chainId, chainName, network, disconnect } = useWallet();
+    const { account, chainName, disconnect } = useWallet();
     const [currentView, setCurrentView] = useState<ModalView>('main');
     const modalRef = useRef<HTMLDialogElement>(null);
 
