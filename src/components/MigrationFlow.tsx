@@ -6,7 +6,6 @@ import { Profile } from "@circles-sdk/profiles";
 
 interface MigrationFlowProps {
     address: Address;
-    userToken: string;
     profile: Profile;
     state: "not-registered" | "registered-v2" | "migrated" | "migrating";
 }

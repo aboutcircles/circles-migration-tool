@@ -4,10 +4,8 @@ import { useCircles } from "../context/CirclesContext";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
-        userToken,
         profile,
-        isRegisteredOnV1,
-        isRegisteredOnV2,
+        avatarData,
         isLoadingAvatarData,
         avatarError
     } = useCircles();
@@ -46,9 +44,8 @@ export function Dashboard({ address }: { address: Address }) {
         <div className="max-w-4xl w-full mx-auto p-6">
             <MigrationFlow
                 address={address}
-                userToken={userToken || ""}
                 profile={profile}
-                state={isRegisteredOnV1 && isRegisteredOnV2 ? "migrated" : isRegisteredOnV1 ? "migrating" : isRegisteredOnV2 ? "registered-v2" : "not-registered"}
+                state={avatarData?.hasV1 && avatarData?.version === 2 ? "migrated" : avatarData?.hasV1 ? "migrating" : avatarData?.version === 2 ? "registered-v2" : "not-registered"}
             />
         </div>
     );

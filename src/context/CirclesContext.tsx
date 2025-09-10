@@ -12,10 +12,6 @@ interface CirclesContextType {
   avatarData: AvatarRow | undefined;
   isLoadingAvatarData: boolean;
   avatarError: string | null;
-  userToken: string | null;
-  avatarAddress: string | null;
-  isRegisteredOnV1: boolean;
-  isRegisteredOnV2: boolean;
 }
 
 const fallbackProfile: Profile = {
@@ -39,11 +35,6 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const profileService = new Profiles("https://rpc.aboutcircles.com/profiles/");
   const circlesRpc = new CirclesRpc("https://rpc.aboutcircles.com/");
   const data = new CirclesData(circlesRpc);
-
-  const userToken = avatarData?.v1Token || null;
-  const avatarAddress = avatarData?.avatar || null;
-  const isRegisteredOnV1 = Boolean(avatarData?.hasV1);
-  const isRegisteredOnV2 = Boolean(avatarData?.version === 2);
 
   const fetchAvatarData = async (address: string) => {
     setIsLoadingAvatarData(true);
@@ -107,10 +98,6 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     avatarData,
     isLoadingAvatarData,
     avatarError,
-    userToken,
-    avatarAddress,
-    isRegisteredOnV1,
-    isRegisteredOnV2,
   };
 
   return <CirclesContext.Provider value={value}>{children}</CirclesContext.Provider>;
