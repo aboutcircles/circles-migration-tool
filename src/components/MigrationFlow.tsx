@@ -38,23 +38,21 @@ export function MigrationFlow({ address, profile, state, onStartMigration, circl
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
             {/* Status Header */}
             <div className="bg-green-50 border-b border-green-100 px-6 py-4">
-                <div className="flex items-center">
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-900">{statuses[state].title}</h2>
-                        <p className="text-sm text-gray-600">{statuses[state].description}</p>
-                    </div>
-                    <div className="ml-auto">
-                        <span className="badge badge-sm badge-success">
-                            {statuses[state].status}
-                        </span>
-                    </div>
-                </div>
+                <h2 className="text-lg font-semibold text-gray-900">{statuses[state].title}</h2>
+                <p className="text-sm text-gray-600">{statuses[state].description}</p>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-6">
                 <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Avatar</h3>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-medium text-gray-700">Avatar</h3>
+                        {state === "ready-to-migrate" && (
+                            <div className="flex items-center space-x-2">
+                                <span className="badge badge-xs badge-error">{invitations.length} invitation{invitations.length !== 1 ? 's' : ''}</span>
+                            </div>
+                        )}
+                    </div>
                     <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
                         <div className="flex items-center space-x-2">
                             <img src={profile.previewImageUrl} alt="Avatar" className="w-8 h-8 rounded-full" />
@@ -103,13 +101,27 @@ export function MigrationFlow({ address, profile, state, onStartMigration, circl
                     </div>
                 </div>
 
-                <button 
-                    onClick={() => handleAction(statuses[state].action)}
-                    className="btn btn-sm btn-primary mx-auto"
-                    disabled={state === "ready-to-migrate" && invitations.length === 0}
-                >
-                    {statuses[state].actionTitle}
-                </button>
+                <div className="flex flex-col items-center space-y-3">
+                    <button
+                        onClick={() => handleAction(statuses[state].action)}
+                        className="btn btn-sm btn-primary"
+                        disabled={state === "ready-to-migrate" && invitations.length === 0}
+                    >
+                        {statuses[state].actionTitle}
+                    </button>
+
+                    {state === "ready-to-migrate" && invitations.length === 0 && (
+                        <a
+                            href="https://circles.garden/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                            <span>Get invited to Circles</span>
+                            <ExternalLink className="w-3 h-3" />
+                        </a>
+                    )}
+                </div>
             </div>
         </div >
     );
