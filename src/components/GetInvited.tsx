@@ -1,4 +1,5 @@
 import { AvatarRow } from "@circles-sdk/data";
+import { truncateAddress } from "../utils/address";
 
 interface GetInvitedProps {
     invitations: AvatarRow[];
@@ -26,7 +27,7 @@ export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) 
                                 {invitation.name || 'Unknown'}
                             </div>
                             <div className="text-sm text-gray-500 font-mono">
-                                {invitation.avatar}
+                                {truncateAddress(invitation.avatar)}
                             </div>
                         </div>
                     </button>

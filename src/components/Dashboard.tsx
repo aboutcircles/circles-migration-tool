@@ -78,15 +78,13 @@ export function Dashboard({ address }: { address: Address }) {
         <div className="max-w-4xl w-full mx-auto p-6">
             {/* Bouton de retour global */}
             {canGoBack && (
-                <div className="mb-4">
-                    <button
-                        onClick={popState}
-                        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span>Back</span>
-                    </button>
-                </div>
+                <button
+                    onClick={popState}
+                    className="btn btn-sm btn-ghost"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back</span>
+                </button>
             )}
 
 
