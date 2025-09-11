@@ -2,6 +2,8 @@ import { Address } from "viem";
 import { MigrationFlow } from "./MigrationFlow";
 import { useCircles } from "../context/CirclesContext";
 import { useState, useEffect } from "react";
+import { MigrationState } from "../types/migration";
+import { ArrowLeft } from "lucide-react";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -13,15 +15,33 @@ export function Dashboard({ address }: { address: Address }) {
         isLoadingAvatarData,
         avatarError
     } = useCircles();
-    const [state, setState] = useState<"not-registered" | "registered-v2" | "migrated" | "ready-to-migrate" | "migrating">("not-registered");
+    const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
+    const currentState = stateStack[stateStack.length - 1];
 
     useEffect(() => {
-        setState(avatarData?.hasV1 && avatarData?.version === 2 ? "migrated" : avatarData?.hasV1 ? "ready-to-migrate" : avatarData?.version === 2 ? "registered-v2" : "not-registered");
+        const newState = avatarData?.hasV1 && avatarData?.version === 2
+            ? "migrated"
+            : avatarData?.hasV1
+                ? "ready-to-migrate"
+                : avatarData?.version === 2
+                    ? "registered-v2"
+                    : "not-registered";
+        setStateStack([newState]);
     }, [avatarData]);
 
-    const handleStartMigration = () => {
-        setState("migrating");
+    const pushState = (newState: MigrationState) => {
+        setStateStack(prev => [...prev, newState]);
     };
+
+    const popState = () => {
+        setStateStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
+    };
+
+    const handleStartMigration = () => {
+        pushState("selecting-inviter");
+    };
+
+    const canGoBack = stateStack.length > 1;
 
     if (isLoadingAvatarData) {
         return (
@@ -56,13 +76,27 @@ export function Dashboard({ address }: { address: Address }) {
 
     return (
         <div className="max-w-4xl w-full mx-auto p-6">
+            {/* Bouton de retour global */}
+            {canGoBack && (
+                <div className="mb-4">
+                    <button
+                        onClick={popState}
+                        className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Back</span>
+                    </button>
+                </div>
+            )}
+
+
             <MigrationFlow
                 address={address}
                 profile={profile}
                 onStartMigration={handleStartMigration}
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}
-                state={state}
+                state={currentState}
                 invitations={invitations || []}
             />
         </div>

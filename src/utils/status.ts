@@ -1,4 +1,6 @@
-export const getStatuses = (onStartMigration: () => void) => ({
+import { MigrationStatusConfig } from "../types/migration";
+
+export const getStatuses = (onStartMigration: () => void): MigrationStatusConfig => ({
     "not-registered": {
         title: "Not Registered",
         description: "Your v1 account has not been registered on Circles",
@@ -35,5 +37,11 @@ export const getStatuses = (onStartMigration: () => void) => ({
         actionTitle: "Please wait...",
         action: () => {
         },
+    },
+    "selecting-inviter": {
+        title: "Select Inviter",
+        description: "Select who will invite you to migrate to v2",
+        actionTitle: "Start migration",
+        action: () => {},
     },
 });

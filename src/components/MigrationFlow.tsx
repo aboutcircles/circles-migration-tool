@@ -1,10 +1,12 @@
 import { Address } from "viem";
-import { useState } from "react";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { Profile } from "@circles-sdk/profiles";
 import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { getStatuses } from "../utils/status";
+import { CopyButton } from "./CopyButton";
+import { GetInvited } from "./GetInvited";
+import { MigrationState } from "../types/migration";
 
 interface MigrationFlowProps {
     address: Address;
@@ -12,23 +14,12 @@ interface MigrationFlowProps {
     onStartMigration: () => void;
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
-    state: "not-registered" | "registered-v2" | "migrated" | "ready-to-migrate" | "migrating";
+    state: MigrationState;
     invitations: AvatarRow[];
 }
 
 export function MigrationFlow({ address, profile, state, onStartMigration, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
-    const [copied, setCopied] = useState(false);
     const statuses = getStatuses(onStartMigration);
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(address);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
 
     const handleAction = (action: () => void) => {
         action();
@@ -43,6 +34,12 @@ export function MigrationFlow({ address, profile, state, onStartMigration, circl
             </div>
 
             {/* Content */}
+            {state === "selecting-inviter" && (
+                <GetInvited
+                    invitations={invitations}
+                    onInviterSelected={onStartMigration}
+                />
+            )}
             <div className="p-6 space-y-6">
                 <div>
                     <div className="flex items-center justify-between mb-3">
@@ -65,17 +62,7 @@ export function MigrationFlow({ address, profile, state, onStartMigration, circl
                         </div>
 
                         <div className="flex items-center space-x-2">
-                            <button
-                                onClick={handleCopy}
-                                className="btn btn-sm btn-ghost btn-circle"
-                                title="Copy address"
-                            >
-                                {copied ? (
-                                    <Check className="w-4 h-4" />
-                                ) : (
-                                    <Copy className="w-4 h-4" />
-                                )}
-                            </button>
+                            <CopyButton text={address} />
                             <a href={`https://explorer.aboutcircles.com/avatar/${address}`} target="_blank" rel="noopener noreferrer"
                                 className="btn btn-sm btn-ghost btn-circle"
                                 title="View on explorer"
