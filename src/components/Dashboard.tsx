@@ -1,6 +1,7 @@
 import { Address } from "viem";
 import { MigrationFlow } from "./MigrationFlow";
 import { useCircles } from "../context/CirclesContext";
+import { useState, useEffect } from "react";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -8,9 +9,19 @@ export function Dashboard({ address }: { address: Address }) {
         avatarData,
         circlesBalance,
         trustConnections,
+        invitations,
         isLoadingAvatarData,
         avatarError
     } = useCircles();
+    const [state, setState] = useState<"not-registered" | "registered-v2" | "migrated" | "ready-to-migrate" | "migrating">("not-registered");
+
+    useEffect(() => {
+        setState(avatarData?.hasV1 && avatarData?.version === 2 ? "migrated" : avatarData?.hasV1 ? "ready-to-migrate" : avatarData?.version === 2 ? "registered-v2" : "not-registered");
+    }, [avatarData]);
+
+    const handleStartMigration = () => {
+        setState("migrating");
+    };
 
     if (isLoadingAvatarData) {
         return (
@@ -48,9 +59,11 @@ export function Dashboard({ address }: { address: Address }) {
             <MigrationFlow
                 address={address}
                 profile={profile}
+                onStartMigration={handleStartMigration}
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}
-                state={avatarData?.hasV1 && avatarData?.version === 2 ? "migrated" : avatarData?.hasV1 ? "migrating" : avatarData?.version === 2 ? "registered-v2" : "not-registered"}
+                state={state}
+                invitations={invitations || []}
             />
         </div>
     );

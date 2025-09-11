@@ -3,41 +3,22 @@ import { useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { Profile } from "@circles-sdk/profiles";
-import { TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
+import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
+import { getStatuses } from "../utils/status";
 
 interface MigrationFlowProps {
     address: Address;
     profile: Profile;
+    onStartMigration: () => void;
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
-    state: "not-registered" | "registered-v2" | "migrated" | "migrating";
+    state: "not-registered" | "registered-v2" | "migrated" | "ready-to-migrate" | "migrating";
+    invitations: AvatarRow[];
 }
 
-const statuses = {
-    "not-registered": {
-        title: "Not Registered",
-        description: "Your v1 account has not been registered on Circles",
-        status: "Not Registered",
-    },
-    "registered-v2": {
-        title: "Registered on v2",
-        description: "Your v1 account has been registered on Circles v2",
-        status: "Registered on v2",
-    },
-    "migrated": {
-        title: "Migrated",
-        description: "Your v1 account has been migrated to v2",
-        status: "Migrated",
-    },
-    "migrating": {
-        title: "Ready to migrate",
-        description: "Your v1 account is ready to be migrated to v2",
-        status: "Ready",
-    },
-};
-
-export function MigrationFlow({ address, profile, state, circlesBalance, trustConnections }: MigrationFlowProps) {
+export function MigrationFlow({ address, profile, state, onStartMigration, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
     const [copied, setCopied] = useState(false);
+    const statuses = getStatuses(onStartMigration);
 
     const handleCopy = async () => {
         try {
@@ -47,6 +28,10 @@ export function MigrationFlow({ address, profile, state, circlesBalance, trustCo
         } catch (err) {
             console.error('Failed to copy:', err);
         }
+    };
+
+    const handleAction = (action: () => void) => {
+        action();
     };
 
     return (
@@ -72,7 +57,7 @@ export function MigrationFlow({ address, profile, state, circlesBalance, trustCo
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Avatar</h3>
                     <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
                         <div className="flex items-center space-x-2">
-                            <img src={profile.previewImageUrl} alt="Avatar" className="w-10 h-10 rounded-full" />
+                            <img src={profile.previewImageUrl} alt="Avatar" className="w-8 h-8 rounded-full" />
                             <div className="flex flex-col space-x-2">
                                 {profile.name}
                                 <span className="font-mono text-sm text-gray-900">
@@ -103,34 +88,28 @@ export function MigrationFlow({ address, profile, state, circlesBalance, trustCo
                     </div>
                 </div>
 
-                {/* Balance and Trust Connections */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Balance */}
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Balance</h3>
                         <div className="text-xl font-semibold text-gray-900">
                             {circlesBalance.reduce((acc, balance) => acc + balance.circles, 0).toFixed(2)} CRC
                         </div>
                     </div>
-
-                    {/* Trust Connections */}
                     <div>
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Trust Connections</h3>
                         <div className="text-xl font-semibold text-gray-900">
                             {trustConnections.length} trust{trustConnections.length > 1 ? "s" : ""}
-                            {/* <span className="text-gray-400">--</span> <span className="text-lg font-normal text-gray-500">trusts</span> */}
                         </div>
                     </div>
                 </div>
 
-                <a
-                    href={`https://app.metri.xyz/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-primary mx-auto"
+                <button 
+                    onClick={() => handleAction(statuses[state].action)}
+                    className="btn btn-sm btn-primary mx-auto"
+                    disabled={state === "ready-to-migrate" && invitations.length === 0}
                 >
-                    Go to Metri
-                </a>
+                    {statuses[state].actionTitle}
+                </button>
             </div>
         </div >
     );

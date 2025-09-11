@@ -10,13 +10,14 @@ interface CirclesContextType {
   isLoadingProfile: boolean;
   profileError: string | null;
   avatarData: AvatarRow | undefined;
+  invitations: AvatarRow[] | undefined;
   isLoadingAvatarData: boolean;
   avatarError: string | null;
 }
 
 const fallbackProfile: Profile = {
-  name: "Fallback Profile",
-  previewImageUrl: "https://via.placeholder.com/150",
+  name: "Avatar",
+  previewImageUrl: "/profile.svg",
 };
 
 const CirclesContext = createContext<CirclesContextType | null>(null);
@@ -30,7 +31,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const [avatarData, setAvatarData] = useState<AvatarRow | undefined>();
   const [isLoadingAvatarData, setIsLoadingAvatarData] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-
+  const [invitations, setInvitations] = useState<AvatarRow[] | undefined>();
   const { account } = useWallet();
   const profileService = new Profiles("https://rpc.aboutcircles.com/profiles/");
   const circlesRpc = new CirclesRpc("https://rpc.aboutcircles.com/");
@@ -44,9 +45,12 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
       const fetchedAvatarData = await data.getAvatarInfo(address);
       const fetchedCirclesBalance = await data.getTokenBalances(address);
       const fetchedTrustConnections = await data.getAggregatedTrustRelations(address);
+      const fetchedInvitations = await data.getInvitations(address);
+      console.log(fetchedInvitations);
       setAvatarData(fetchedAvatarData);
       setCirclesBalance(fetchedCirclesBalance);
       setTrustConnections(fetchedTrustConnections);
+      setInvitations(fetchedInvitations);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch avatar data';
       setAvatarError(errorMessage);
@@ -100,6 +104,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     isLoadingProfile,
     profileError,
     avatarData,
+    invitations,
     isLoadingAvatarData,
     avatarError,
   };
