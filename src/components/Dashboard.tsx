@@ -37,10 +37,6 @@ export function Dashboard({ address }: { address: Address }) {
         setStateStack(prev => prev.length > 1 ? prev.slice(0, -1) : prev);
     };
 
-    const handleStartMigration = () => {
-        pushState("selecting-inviter");
-    };
-
     const canGoBack = stateStack.length > 1;
 
     if (isLoadingAvatarData) {
@@ -91,7 +87,7 @@ export function Dashboard({ address }: { address: Address }) {
             <MigrationFlow
                 address={address}
                 profile={profile}
-                onStartMigration={handleStartMigration}
+                pushState={pushState}
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}
                 state={currentState}

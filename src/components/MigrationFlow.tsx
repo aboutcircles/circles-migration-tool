@@ -7,19 +7,23 @@ import { getStatuses } from "../utils/status";
 import { CopyButton } from "./CopyButton";
 import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
+import { useState } from "react";
+import { CreateProfile } from "./CreateProfile";
 
 interface MigrationFlowProps {
     address: Address;
     profile: Profile;
-    onStartMigration: () => void;
+    pushState: (state: MigrationState) => void;
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
     state: MigrationState;
     invitations: AvatarRow[];
 }
 
-export function MigrationFlow({ address, profile, state, onStartMigration, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
-    const statuses = getStatuses(onStartMigration);
+export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
+    const statuses = getStatuses(pushState);
+    const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
+    console.log(selectedInviter);
 
     const handleAction = (action: () => void) => {
         action();
@@ -37,8 +41,11 @@ export function MigrationFlow({ address, profile, state, onStartMigration, circl
             {state === "selecting-inviter" && (
                 <GetInvited
                     invitations={invitations}
-                    onInviterSelected={onStartMigration}
+                    onInviterSelected={setSelectedInviter}
                 />
+            )}
+            {state === "create-profile" && (
+                <CreateProfile />
             )}
             <div className="p-6 space-y-6">
                 <div>

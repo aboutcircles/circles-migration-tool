@@ -7,7 +7,6 @@ interface GetInvitedProps {
 }
 
 export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) {
-    console.log(invitations);
     return (
         <div className="p-6">
             <div className="space-y-3">
