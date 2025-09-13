@@ -23,7 +23,6 @@ interface MigrationFlowProps {
 export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
     const statuses = getStatuses(pushState);
     const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
-    console.log(selectedInviter);
 
     const handleAction = (action: () => void) => {
         action();

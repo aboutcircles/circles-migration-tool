@@ -4,6 +4,7 @@ import { NETWORK_CONFIG } from '../constants/networks';
 import { NetworkConfig } from '../types/network';
 import { Address, PrivateKeyAccount } from 'viem';
 import { gnosis } from 'viem/chains';
+import { findSafeFromSigner } from '../utils/safeDerivation';
 
 interface WalletContextType {
   account: {
@@ -11,7 +12,6 @@ interface WalletContextType {
     address?: Address;
   };
   chainId?: number;
-  pkAccount?: PrivateKeyAccount;
   chainName?: string;
   network?: NetworkConfig;
   isWrongNetwork: boolean;
@@ -26,23 +26,40 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
   const [pkAccount, setPkAccount] = useState<PrivateKeyAccount | undefined>(undefined);
+  const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
   const wagmiAccount = useAccount();
   const chainId = pkAccount ? gnosis.id : wagmiAccount?.chainId;
   const chainName = pkAccount ? gnosis.name : wagmiAccount?.chain?.name;
   const network = chainId ? NETWORK_CONFIG[chainId] : undefined;
 
-  const isConnected = pkAccount ? true : isMounted && wagmiAccount.isConnected;
-  const activeAddress = pkAccount ? pkAccount.address : wagmiAccount.address;
-  
+  const isConnected = safeAddress ? true : isMounted && wagmiAccount.isConnected;
+
+  const circlesAddress = safeAddress ? safeAddress : wagmiAccount.address;
+
   const isWrongNetwork = Boolean(isConnected && !network);
 
   const disconnect = () => {
-    if (pkAccount) {
+    if (safeAddress) {
       setPkAccount(undefined);
+      setSafeAddress(undefined);
     } else {
       disconnectWagmiAccount();
     }
   };
+  
+  useEffect(() => {
+    if (pkAccount?.address) {
+      findSafeFromSigner(pkAccount.address).then((foundSafeAddress) => {
+        console.log('Found Safe address:', foundSafeAddress);
+        setSafeAddress(foundSafeAddress || undefined);
+      }).catch((error) => {
+        console.error('Error finding Safe address:', error);
+        setSafeAddress(undefined);
+      });
+    } else {
+      setSafeAddress(undefined);
+    }
+  }, [pkAccount]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -51,14 +68,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const value = {
     account: {
       isConnected,
-      address: activeAddress,
+      address: circlesAddress,
     },
     chainId,
     chainName,
     network,
     isWrongNetwork: isMounted && isWrongNetwork,
     isMounted,
-    pkAccount,
     setPkAccount,
     disconnect,
   };

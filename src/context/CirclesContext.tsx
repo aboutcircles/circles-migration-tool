@@ -54,7 +54,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch avatar data';
       setAvatarError(errorMessage);
-      console.error('Error fetching avatar data:', error);
+      console.error('Error fetching avatar data:', error, address);
     } finally {
       setIsLoadingAvatarData(false);
     }
