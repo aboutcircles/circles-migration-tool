@@ -1,5 +1,6 @@
 import { ArrowUpRight, X } from "lucide-react";
 import { truncateAddress } from "../utils/address";
+import { CopyButton } from "./CopyButton";
 
 interface AccountViewProps {
     address: `0x${string}`;
@@ -24,9 +25,10 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
                         <h3 className="font-semibold text-base">
                             Wallet
                         </h3>
-                        <p className="text-sm text-base-content/70 font-mono">
+                        <span className="text-sm text-base-content/70 font-mono">
                             {truncateAddress(address)}
-                        </p>
+                            <CopyButton text={address} />
+                        </span>
                         <p className="text-xs text-base-content/50 mt-1">
                             {connectedChain}
                         </p>
