@@ -1,9 +1,10 @@
 import { ArrowUpRight, X } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { CopyButton } from "./CopyButton";
+import { Address } from "viem";
 
 interface AccountViewProps {
-    address: `0x${string}`;
+    address: Address;
     connectedChain: string;
     disconnect: () => void;
     onClose: () => void

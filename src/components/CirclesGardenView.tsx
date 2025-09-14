@@ -30,7 +30,7 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
 
             const keyFromMnemonic = mnemonicToEntropy(seedPhrase);
             const account = privateKeyToAccount(`0x${keyFromMnemonic}` as `0x${string}`);
-            setPkAccount(account);
+            setPkAccount({privateKey: `0x${keyFromMnemonic}`, account: account});
             
             onClose?.();
         } catch (error) {

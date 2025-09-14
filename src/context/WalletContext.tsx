@@ -4,7 +4,12 @@ import { NETWORK_CONFIG } from '../constants/networks';
 import { NetworkConfig } from '../types/network';
 import { Address, PrivateKeyAccount } from 'viem';
 import { gnosis } from 'viem/chains';
+import {
+  SafeSdkBrowserContractRunner,
+  SafeSdkPrivateKeyContractRunner,
+} from '@circles-sdk/adapter-safe';
 import { findSafeFromSigner } from '../utils/safeDerivation';
+import { Sdk } from '@circles-sdk/sdk';
 
 interface WalletContextType {
   account: {
@@ -16,7 +21,10 @@ interface WalletContextType {
   network?: NetworkConfig;
   isWrongNetwork: boolean;
   isMounted: boolean;
-  setPkAccount: (account: PrivateKeyAccount | undefined) => void;
+  safeAddress?: Address;
+  circlesSdkRunner?: any;
+  isLoadingSafe: boolean;
+  setPkAccount: (account: {privateKey: string, account: PrivateKeyAccount} | undefined) => void;
   disconnect: () => void;
 }
 
@@ -25,41 +33,80 @@ const WalletContext = createContext<WalletContextType | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
-  const [pkAccount, setPkAccount] = useState<PrivateKeyAccount | undefined>(undefined);
+  const [pkAccount, setPkAccount] = useState<{privateKey: string, account: PrivateKeyAccount} | undefined>(undefined);
   const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
+  const [circlesSdkRunner, setCirclesSdkRunner] = useState<any>(undefined);
+  const [isLoadingSafe, setIsLoadingSafe] = useState(false);
   const wagmiAccount = useAccount();
+
   const chainId = pkAccount ? gnosis.id : wagmiAccount?.chainId;
   const chainName = pkAccount ? gnosis.name : wagmiAccount?.chain?.name;
   const network = chainId ? NETWORK_CONFIG[chainId] : undefined;
 
-  const isConnected = safeAddress ? true : isMounted && wagmiAccount.isConnected;
+  const signerAddress = pkAccount?.account.address || wagmiAccount.address;
 
-  const circlesAddress = safeAddress ? safeAddress : wagmiAccount.address;
+  const isConnected = Boolean(safeAddress || (isMounted && wagmiAccount.isConnected));
 
   const isWrongNetwork = Boolean(isConnected && !network);
 
   const disconnect = () => {
-    if (safeAddress) {
-      setPkAccount(undefined);
-      setSafeAddress(undefined);
-    } else {
+    setPkAccount(undefined);
+    setSafeAddress(undefined);
+    setCirclesSdkRunner(undefined);
+    setIsLoadingSafe(false);
+
+    if (wagmiAccount.isConnected) {
       disconnectWagmiAccount();
     }
   };
-  
+
   useEffect(() => {
-    if (pkAccount?.address) {
-      findSafeFromSigner(pkAccount.address).then((foundSafeAddress) => {
-        console.log('Found Safe address:', foundSafeAddress);
-        setSafeAddress(foundSafeAddress || undefined);
-      }).catch((error) => {
-        console.error('Error finding Safe address:', error);
+    const initializeSafeAndSdk = async () => {
+      if (!signerAddress) {
         setSafeAddress(undefined);
-      });
-    } else {
-      setSafeAddress(undefined);
-    }
-  }, [pkAccount]);
+        setCirclesSdkRunner(undefined);
+        setIsLoadingSafe(false);
+        return;
+      }
+
+      setIsLoadingSafe(true);
+
+      try {
+        const safeAddress = await findSafeFromSigner(signerAddress);
+        console.log('Found Safe address:', safeAddress, 'for signer:', signerAddress);
+
+        setSafeAddress(safeAddress || undefined);
+
+        if (safeAddress) {
+          let runner;
+
+          if (pkAccount) {
+            console.log('Initializing SDK with private key runner');
+            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, network?.circlesRpcUrl || '');
+            await runner.init(safeAddress as `0x${string}`);
+          } else {
+            console.log('Initializing SDK with browser runner');
+            runner = new SafeSdkBrowserContractRunner();
+            await runner.init(safeAddress as `0x${string}`);
+          }
+          let sdk = new Sdk(runner);
+
+          setCirclesSdkRunner(sdk);
+        } else {
+          setCirclesSdkRunner(undefined);
+        }
+
+      } catch (error) {
+        console.error('Error finding Safe address or initializing SDK:', error);
+        setSafeAddress(undefined);
+        setCirclesSdkRunner(undefined);
+      } finally {
+        setIsLoadingSafe(false);
+      }
+    };
+
+    initializeSafeAndSdk();
+  }, [signerAddress, pkAccount]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -68,13 +115,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const value = {
     account: {
       isConnected,
-      address: circlesAddress,
+      address: safeAddress,
     },
     chainId,
     chainName,
     network,
     isWrongNetwork: isMounted && isWrongNetwork,
     isMounted,
+    safeAddress,
+    circlesSdkRunner,
+    isLoadingSafe,
     setPkAccount,
     disconnect,
   };

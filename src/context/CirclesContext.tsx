@@ -80,7 +80,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (account.isConnected && account.address) {
-      fetchAvatarData(account.address);
+      fetchAvatarData(account.address as `0x${string}`);
     } else {
       setAvatarData(undefined);
       setProfile(fallbackProfile);

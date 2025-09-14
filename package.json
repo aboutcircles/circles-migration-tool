@@ -10,6 +10,7 @@
     "start": "serve -s dist"
   },
   "dependencies": {
+    "@circles-sdk/adapter-safe": "^0.29.1",
     "@circles-sdk/data": "^0.29.1",
     "@circles-sdk/profiles": "^0.29.1",
     "@circles-sdk/sdk": "^0.29.1",
