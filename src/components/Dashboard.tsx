@@ -16,7 +16,7 @@ export function Dashboard({ address }: { address: Address }) {
         isLoadingAvatarData,
         avatarError
     } = useCircles();
-    const {isLoadingSafe} = useWallet();
+    const {isLoadingSafe, circlesSdkRunner} = useWallet();
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const currentState = stateStack[stateStack.length - 1];
 
@@ -41,7 +41,7 @@ export function Dashboard({ address }: { address: Address }) {
 
     const canGoBack = stateStack.length > 1;
 
-    if (isLoadingAvatarData || isLoadingSafe) {
+    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
@@ -74,7 +74,6 @@ export function Dashboard({ address }: { address: Address }) {
 
     return (
         <div className="max-w-4xl w-full mx-auto p-6">
-            {/* Bouton de retour global */}
             {canGoBack && (
                 <button
                     onClick={popState}
@@ -94,6 +93,7 @@ export function Dashboard({ address }: { address: Address }) {
                 trustConnections={trustConnections || []}
                 state={currentState}
                 invitations={invitations || []}
+                circlesSdkRunner={circlesSdkRunner}
             />
         </div>
     );

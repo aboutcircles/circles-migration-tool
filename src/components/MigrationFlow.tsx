@@ -3,12 +3,13 @@ import { ExternalLink } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { Profile } from "@circles-sdk/profiles";
 import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
-import { getStatuses } from "../utils/status";
 import { CopyButton } from "./CopyButton";
 import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
 import { useState } from "react";
 import { CreateProfile } from "./CreateProfile";
+import { Sdk } from "@circles-sdk/sdk";
+import { STEP_CONFIG } from "../flow/steps";
 
 interface MigrationFlowProps {
     address: Address;
@@ -18,23 +19,44 @@ interface MigrationFlowProps {
     trustConnections: TrustRelationRow[];
     state: MigrationState;
     invitations: AvatarRow[];
+    circlesSdkRunner: Sdk;
 }
 
-export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations }: MigrationFlowProps) {
-    const statuses = getStatuses(pushState);
-    const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
-    console.log(selectedInviter)
+export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations, circlesSdkRunner }: MigrationFlowProps) {
+  const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
+  const [draftProfile, setDraftProfile] = useState<Profile>({ name:"", description:"", previewImageUrl:"", imageUrl:"" });
+  const [profileErrors, setProfileErrors] = useState<string[]>([]);
 
-    const handleAction = (action: () => void) => {
-        action();
-    };
+  const ctx = {
+    address,
+    sdk: circlesSdkRunner,
+    invitations,
+    selectedInviter,
+    draftProfile,
+    profileErrors,
+  };
+
+  const step = STEP_CONFIG[state];
+  const canProceed = step.guard ? step.guard(ctx) : true;
+
+  const handlePrimary = async () => {
+    if (!canProceed) return;
+    try {
+      if (step.onNext) await step.onNext(ctx);
+      const next =
+        typeof step.next === "function" ? step.next(ctx) : step.next;
+      if (next) pushState(next);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
             {/* Status Header */}
             <div className="bg-green-50 border-b border-green-100 px-6 py-4">
-                <h2 className="text-lg font-semibold text-gray-900">{statuses[state].title}</h2>
-                <p className="text-sm text-gray-600">{statuses[state].description}</p>
+                <h2 className="text-lg font-semibold text-gray-900">{step.title}</h2>
+                <p className="text-sm text-gray-600">{step.description}</p>
             </div>
 
             {/* Content */}
@@ -46,7 +68,9 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                     />
                 )}
                 {state === "create-profile" && (
-                    <CreateProfile />
+                    <CreateProfile profile={draftProfile}
+                    onChange={setDraftProfile}
+                    onValidityChange={setProfileErrors} />
                 )}
 
                 {state !== "selecting-inviter" && state !== "create-profile" && (
@@ -100,11 +124,11 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
 
                 <div className="flex flex-col items-center space-y-3">
                     <button
-                        onClick={() => handleAction(statuses[state].action)}
+                        onClick={() => handlePrimary()}
                         className="btn btn-sm btn-primary"
-                        disabled={state === "ready-to-migrate" && invitations.length === 0}
+                        disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed}
                     >
-                        {statuses[state].actionTitle}
+                        {step.cta}
                     </button>
 
                     {state === "ready-to-migrate" && invitations.length === 0 && (

@@ -4,8 +4,9 @@ export type MigrationState =
   | "registered-v2"
   | "migrated"
   | "ready-to-migrate" 
-  | "selecting-inviter" 
-  | "create-profile"; 
+  | "selecting-inviter"
+  | "create-profile"
+  | "execute-migration";
 
 
 export interface MigrationStatus {

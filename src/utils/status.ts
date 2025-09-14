@@ -40,7 +40,13 @@ export const getStatuses = (pushState: (state: MigrationState) => void): Migrati
     "create-profile": {
         title: "Create Profile",
         description: "Create your new profile",
-        actionTitle: "Create Profile",
+        actionTitle: "Next",
+        action: () => pushState("ready-to-migrate"),
+    },
+    "execute-migration": {
+        title: "Execute Migration",
+        description: "Execute the migration",
+        actionTitle: "Execute Migration",
         action: () => {},
     },
 });
