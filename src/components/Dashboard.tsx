@@ -4,6 +4,7 @@ import { useCircles } from "../context/CirclesContext";
 import { useState, useEffect } from "react";
 import { MigrationState } from "../types/migration";
 import { ArrowLeft } from "lucide-react";
+import { useWallet } from "../context/WalletContext";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -15,6 +16,7 @@ export function Dashboard({ address }: { address: Address }) {
         isLoadingAvatarData,
         avatarError
     } = useCircles();
+    const {isLoadingSafe} = useWallet();
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const currentState = stateStack[stateStack.length - 1];
 
@@ -39,7 +41,7 @@ export function Dashboard({ address }: { address: Address }) {
 
     const canGoBack = stateStack.length > 1;
 
-    if (isLoadingAvatarData) {
+    if (isLoadingAvatarData || isLoadingSafe) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">

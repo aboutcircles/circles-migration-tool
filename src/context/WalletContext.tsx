@@ -22,7 +22,7 @@ interface WalletContextType {
   isWrongNetwork: boolean;
   isMounted: boolean;
   safeAddress?: Address;
-  circlesSdkRunner?: any;
+  circlesSdkRunner?: Sdk;
   isLoadingSafe: boolean;
   setPkAccount: (account: {privateKey: string, account: PrivateKeyAccount} | undefined) => void;
   disconnect: () => void;
@@ -82,7 +82,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
           if (pkAccount) {
             console.log('Initializing SDK with private key runner');
-            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, network?.circlesRpcUrl || '');
+            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.aboutcircles.com/');
             await runner.init(safeAddress as `0x${string}`);
           } else {
             console.log('Initializing SDK with browser runner');

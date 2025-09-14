@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Profile, Profiles } from '@circles-sdk/profiles';
-import { AvatarRow, CirclesData, CirclesRpc, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
+import { Profile } from '@circles-sdk/profiles';
+import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { useWallet } from './WalletContext';
+import { Sdk } from "@circles-sdk/sdk";
 
 interface CirclesContextType {
   profile: Profile;
@@ -32,20 +33,18 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const [isLoadingAvatarData, setIsLoadingAvatarData] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [invitations, setInvitations] = useState<AvatarRow[] | undefined>();
-  const { account } = useWallet();
-  const profileService = new Profiles("https://rpc.aboutcircles.com/profiles/");
-  const circlesRpc = new CirclesRpc("https://rpc.aboutcircles.com/");
-  const data = new CirclesData(circlesRpc);
+  const { account, circlesSdkRunner } = useWallet();
 
-  const fetchAvatarData = async (address: `0x${string}`) => {
+  const fetchAvatarData = async (address: `0x${string}`, circlesSdkRunner: Sdk) => {
     setIsLoadingAvatarData(true);
     setAvatarError(null);
 
     try {
-      const fetchedAvatarData = await data.getAvatarInfo(address);
-      const fetchedCirclesBalance = await data.getTokenBalances(address);
-      const fetchedTrustConnections = await data.getAggregatedTrustRelations(address);
-      const fetchedInvitations = await data.getInvitations(address);
+      console.log(circlesSdkRunner);
+      const fetchedAvatarData = await circlesSdkRunner.data.getAvatarInfo(address);
+      const fetchedCirclesBalance = await circlesSdkRunner.data.getTokenBalances(address);
+      const fetchedTrustConnections = await circlesSdkRunner.data.getAggregatedTrustRelations(address);
+      const fetchedInvitations = await circlesSdkRunner.data.getInvitations(address);
       console.log(fetchedInvitations);
       setAvatarData(fetchedAvatarData);
       setCirclesBalance(fetchedCirclesBalance);
@@ -60,12 +59,12 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchProfile = async (cidV0: string) => {
+  const fetchProfile = async (cidV0: string, circlesSdkRunner: Sdk) => {
     setIsLoadingProfile(true);
     setProfileError(null);
 
     try {
-      const profileData = await profileService.get(cidV0);
+      const profileData = await circlesSdkRunner.profiles?.get(cidV0);
       if (profileData) {
         setProfile(profileData);
       }
@@ -79,9 +78,9 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    if (account.isConnected && account.address) {
-      fetchAvatarData(account.address as `0x${string}`);
-    } else {
+    if (account.isConnected && account.address && circlesSdkRunner) {
+      fetchAvatarData(account.address as `0x${string}`, circlesSdkRunner);
+    } else if (!account.isConnected || !account.address) {
       setAvatarData(undefined);
       setProfile(fallbackProfile);
       setCirclesBalance(undefined);
@@ -89,13 +88,13 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
       setProfileError(null);
       setAvatarError(null);
     }
-  }, [account.isConnected, account.address]);
+  }, [account.isConnected, account.address, circlesSdkRunner]);
 
   useEffect(() => {
-    if (avatarData?.cidV0) {
-      fetchProfile(avatarData.cidV0);
+    if (avatarData?.cidV0 && circlesSdkRunner) {
+      fetchProfile(avatarData.cidV0, circlesSdkRunner);
     }
-  }, [avatarData]);
+  }, [avatarData, circlesSdkRunner]);
 
   const value = {
     profile,
