@@ -12,7 +12,6 @@ export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) 
             {invitations.map((avatarWithProfile) => {
                 const { avatar, profile } = avatarWithProfile;
                 const displayName = profile.name || avatar.name || 'Unknown';
-                const displayImage = profile.previewImageUrl || avatar.avatar || '/profile.svg';
                 
                 return (
                 <button
@@ -22,7 +21,7 @@ export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) 
                 >
                     <div className="w-10 h-10 rounded-full overflow-hidden">
                         <img 
-                            src={displayImage} 
+                            src={profile.previewImageUrl} 
                             alt="Avatar" 
                             className="w-full h-full object-cover"
                         />
