@@ -14,7 +14,7 @@ export function Dashboard({ address }: { address: Address }) {
         avatarData,
         circlesBalance,
         trustConnections,
-        invitations,
+        invitationsWithProfiles,
         isLoadingAvatarData,
         avatarError
     } = useCircles();
@@ -100,7 +100,7 @@ export function Dashboard({ address }: { address: Address }) {
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}
                 state={currentState}
-                invitations={invitations || []}
+                invitationsWithProfiles={invitationsWithProfiles || []}
                 circlesSdkRunner={circlesSdkRunner}
             />
         </div>

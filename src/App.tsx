@@ -21,7 +21,7 @@ function App() {
 						<Dashboard address={account.address} />
 					) : (
 						<div className="mt-20 w-96 mx-auto border border-base-300 p-4 rounded-md shadow-sm">
-							<h1 className="text-lg font-bold">Please connect your wallet to continue</h1>
+							<h1 className="text-lg font-bold text-center">Please connect your wallet to continue</h1>
 						</div>
 					)}
 				</div>

@@ -1,37 +1,43 @@
-import { AvatarRow } from "@circles-sdk/data";
 import { truncateAddress } from "../utils/address";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface GetInvitedProps {
-    invitations: AvatarRow[];
+    invitations: InvitationWithProfile[];
     onInviterSelected: (inviter: `0x${string}`) => void;
 }
 
 export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) {
     return (
-        <div className="p-6">
-            <div className="space-y-3">
-                {invitations.map((invitation) => (
-                    <button
-                        key={invitation.avatar}
-                        onClick={() => onInviterSelected(invitation.avatar)}
-                        className="w-full flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
-                    >
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-600">
-                                {invitation.name?.charAt(0)?.toUpperCase() || '?'}
-                            </span>
+        <div className="divide-y divide-gray-200">
+            {invitations.map((invitationWithProfile) => {
+                const { invitation, profile } = invitationWithProfile;
+                const displayName = profile?.name || invitation.name || 'Unknown';
+                const displayImage = profile?.previewImageUrl || invitation.avatar || '/profile.svg';
+                
+                return (
+                <button
+                    key={invitation.avatar}
+                    onClick={() => onInviterSelected(invitation.avatar)}
+                    className="w-full flex items-center space-x-3 text-left"
+                >
+                    <div className="w-10 h-10 rounded-full overflow-hidden">
+                        <img 
+                            src={displayImage} 
+                            alt="Avatar" 
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                    <div className="flex-1">
+                        <div className="font-medium text-gray-900">
+                            {displayName}
                         </div>
-                        <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                                {invitation.name || 'Unknown'}
-                            </div>
-                            <div className="text-sm text-gray-500 font-mono">
-                                {truncateAddress(invitation.avatar)}
-                            </div>
+                        <div className="text-sm text-gray-500 font-mono">
+                            {truncateAddress(invitation.avatar)}
                         </div>
-                    </button>
-                ))}
-            </div>
+                    </div>
+                </button>
+                );
+            })}
         </div>
     );
 }

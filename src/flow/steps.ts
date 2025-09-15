@@ -1,13 +1,13 @@
 import { Address } from "viem";
 import { Sdk } from "@circles-sdk/sdk";
-import { AvatarRow } from "@circles-sdk/data";
+import { InvitationWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
 
 type Ctx = {
     address: Address;
     sdk: Sdk;
-    invitations: AvatarRow[];
+    invitationsWithProfiles: InvitationWithProfile[];
     selectedInviter: `0x${string}` | null;
     draftProfile: Profile;
     profileErrors: string[];
@@ -75,8 +75,8 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         id: "execute-migration",
         title: "Execute Migration",
         cta: "Execute Migration",
-        guard: ({ invitations, selectedInviter }) =>
-            invitations.length > 0 && !!selectedInviter,
+        guard: ({ invitationsWithProfiles, selectedInviter }) =>
+            invitationsWithProfiles.length > 0 && !!selectedInviter,
         onNext: async ({ sdk, address, selectedInviter, draftProfile }) => {
             try {
                 await sdk.migrateAvatar(selectedInviter || "0x0000000000000000000000000000000000000000", address as `0x${string}`, draftProfile);

@@ -4,6 +4,11 @@ import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data"
 import { useWallet } from './WalletContext';
 import { Sdk } from "@circles-sdk/sdk";
 
+export interface InvitationWithProfile {
+  invitation: AvatarRow;
+  profile?: Profile;
+}
+
 interface CirclesContextType {
   profile: Profile;
   circlesBalance: TokenBalanceRow[] | undefined;
@@ -11,7 +16,7 @@ interface CirclesContextType {
   isLoadingProfile: boolean;
   profileError: string | null;
   avatarData: AvatarRow | undefined;
-  invitations: AvatarRow[] | undefined;
+  invitationsWithProfiles: InvitationWithProfile[] | undefined;
   isLoadingAvatarData: boolean;
   avatarError: string | null;
 }
@@ -32,7 +37,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const [avatarData, setAvatarData] = useState<AvatarRow | undefined>();
   const [isLoadingAvatarData, setIsLoadingAvatarData] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [invitations, setInvitations] = useState<AvatarRow[] | undefined>();
+  const [invitationsWithProfiles, setInvitationsWithProfiles] = useState<InvitationWithProfile[] | undefined>();
   const { account, circlesSdkRunner } = useWallet();
 
   const fetchAvatarData = async (address: `0x${string}`, circlesSdkRunner: Sdk) => {
@@ -65,11 +70,12 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
       }
 
       if (invitationsResult.status === 'fulfilled') {
-        setInvitations(invitationsResult.value);
-        console.log(invitationsResult.value);
+        const invitationsData = invitationsResult.value;
+        console.log(invitationsData);
+        await fetchInvitationProfiles(invitationsData, circlesSdkRunner);
       } else {
         console.warn('Failed to fetch invitations:', invitationsResult.reason);
-        setInvitations([]);
+        setInvitationsWithProfiles([]);
       }
 
     } catch (error) {
@@ -99,6 +105,29 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchInvitationProfiles = async (invitations: AvatarRow[], circlesSdkRunner: Sdk) => {
+    const invitationsWithProfiles: InvitationWithProfile[] = [];
+    
+    for (const invitation of invitations) {
+      const invitationWithProfile: InvitationWithProfile = { invitation };
+      
+      if (invitation.cidV0) {
+        try {
+          const profileData = await circlesSdkRunner.profiles?.get(invitation.cidV0);
+          if (profileData) {
+            invitationWithProfile.profile = profileData;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch profile for invitation ${invitation.avatar}:`, error);
+        }
+      }
+      
+      invitationsWithProfiles.push(invitationWithProfile);
+    }
+    
+    setInvitationsWithProfiles(invitationsWithProfiles);
+  };
+
   useEffect(() => {
     if (account.isConnected && account.address && circlesSdkRunner) {
       fetchAvatarData(account.address as `0x${string}`, circlesSdkRunner);
@@ -107,6 +136,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
       setProfile(fallbackProfile);
       setCirclesBalance(undefined);
       setTrustConnections(undefined);
+      setInvitationsWithProfiles(undefined);
       setProfileError(null);
       setAvatarError(null);
     }
@@ -118,6 +148,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     }
   }, [avatarData, circlesSdkRunner]);
 
+
   const value = {
     profile,
     circlesBalance,
@@ -125,7 +156,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     isLoadingProfile,
     profileError,
     avatarData,
-    invitations,
+    invitationsWithProfiles,
     isLoadingAvatarData,
     avatarError,
   };

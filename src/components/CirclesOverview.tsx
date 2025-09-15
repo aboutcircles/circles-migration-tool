@@ -1,13 +1,14 @@
 import { truncateAddress } from "../utils/address";
 import { CopyButton } from "./CopyButton";
 import { ExternalLink } from "lucide-react";
-import { AvatarRow, TokenBalanceRow } from "@circles-sdk/data";
+import { TokenBalanceRow } from "@circles-sdk/data";
 import { TrustRelationRow } from "@circles-sdk/data";
 import { Address } from "viem";
 import { Profile } from "@circles-sdk/profiles";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface CirclesOverviewProps {
-    invitations: AvatarRow[];
+    invitationsWithProfiles: InvitationWithProfile[];
     profile: Profile;
     address: Address;
     circlesBalance: TokenBalanceRow[];
@@ -15,7 +16,7 @@ interface CirclesOverviewProps {
 }
 
 
-export function CirclesOverview({ invitations, profile, address, circlesBalance, trustConnections }: CirclesOverviewProps) {
+export function CirclesOverview({ invitationsWithProfiles, profile, address, circlesBalance, trustConnections }: CirclesOverviewProps) {
     const totalBalance = circlesBalance.reduce((acc, balance) => acc + balance.circles, 0);
 
     return (
@@ -44,9 +45,9 @@ export function CirclesOverview({ invitations, profile, address, circlesBalance,
                     </div>
                 </div>
 
-                {invitations.length > 0 && (
+                {invitationsWithProfiles.length > 0 && (
                     <div className="badge badge-soft badge-sm">
-                        {invitations.length} invitation{invitations.length !== 1 ? 's' : ''}
+                        {invitationsWithProfiles.length} invitation{invitationsWithProfiles.length !== 1 ? 's' : ''}
                     </div>
                 )}
             </div>

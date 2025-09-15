@@ -1,7 +1,7 @@
 import { Address } from "viem";
 import { ExternalLink } from "lucide-react";
 import { Profile } from "@circles-sdk/profiles";
-import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
+import { TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
 import { CirclesOverview } from "./CirclesOverview";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface MigrationFlowProps {
     address: Address;
@@ -18,11 +19,11 @@ interface MigrationFlowProps {
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
     state: MigrationState;
-    invitations: AvatarRow[];
+    invitationsWithProfiles: InvitationWithProfile[];
     circlesSdkRunner: Sdk;
 }
 
-export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations, circlesSdkRunner }: MigrationFlowProps) {
+export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitationsWithProfiles, circlesSdkRunner }: MigrationFlowProps) {
     const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
     const [draftProfile, setDraftProfile] = useState<Profile>({ name: "", description: "", previewImageUrl: "", imageUrl: "" });
     const [profileErrors, setProfileErrors] = useState<string[]>([]);
@@ -31,7 +32,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
     const ctx = {
         address,
         sdk: circlesSdkRunner,
-        invitations,
+        invitationsWithProfiles,
         selectedInviter,
         draftProfile,
         profileErrors,
@@ -75,7 +76,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
             <div className="flex flex-col w-full border border-black/10 px-10 py-6 rounded-md">
                 {state === "selecting-inviter" && (
                     <GetInvited
-                        invitations={invitations}
+                        invitations={invitationsWithProfiles}
                         onInviterSelected={setSelectedInviter}
                     />
                 )}
@@ -86,7 +87,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                 )}
 
                 {state !== "selecting-inviter" && state !== "create-profile" && (
-                    <CirclesOverview invitations={invitations} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
+                    <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 
                 <div className="flex flex-col items-center space-y-3 mt-6">
@@ -103,13 +104,13 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                         <button
                             onClick={() => handlePrimary()}
                             className="btn btn-neutral"
-                            disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
+                            disabled={state === "ready-to-migrate" && invitationsWithProfiles.length === 0 || !canProceed || isProcessing}
                         >
                             {isProcessing ? "Processing..." : step.cta}
                         </button>
                     )}
 
-                    {state === "ready-to-migrate" && invitations.length === 0 && (
+                    {state === "ready-to-migrate" && invitationsWithProfiles.length === 0 && (
                         <a
                             href="https://circles.garden/"
                             target="_blank"
