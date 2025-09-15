@@ -1,9 +1,7 @@
 import { Address } from "viem";
 import { ExternalLink } from "lucide-react";
-import { truncateAddress } from "../utils/address";
 import { Profile } from "@circles-sdk/profiles";
 import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
-import { CopyButton } from "./CopyButton";
 import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
 import { useState } from "react";
