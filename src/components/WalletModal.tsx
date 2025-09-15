@@ -38,7 +38,7 @@ export default function WalletModal() {
                 </button>
             ) : (
                 <button
-                    className="btn btn-primary"
+                    className="btn btn-neutral"
                     onClick={() => openModal('select-wallet')}
                 >
                     Connect Wallet

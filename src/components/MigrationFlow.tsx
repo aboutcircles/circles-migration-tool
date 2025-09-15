@@ -95,14 +95,14 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                             href={step.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-primary"
+                            className="btn btn-neutral"
                         >
                             {step.cta}
                         </a>
                     ) : (
                         <button
                             onClick={() => handlePrimary()}
-                            className="btn btn-primary"
+                            className="btn btn-neutral"
                             disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
                         >
                             {isProcessing ? "Processing..." : step.cta}
