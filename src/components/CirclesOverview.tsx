@@ -25,7 +25,7 @@ export function CirclesOverview({ invitationsWithProfiles, profile, address, cir
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full">
-                        <img src={profile.previewImageUrl || '/profile.svg'} alt="Avatar" />
+                        <img src={profile.previewImageUrl} alt="Avatar" />
                     </div>
                     <div>
                         <h2 className="text-lg font-semibold text-base-content">Avatar</h2>
