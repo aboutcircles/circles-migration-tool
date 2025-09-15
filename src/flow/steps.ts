@@ -21,7 +21,10 @@ type Step = {
     guard?: (c: Ctx) => boolean;
     onNext?: (c: Ctx) => Promise<void>;
     next?: MigrationState | ((c: Ctx) => MigrationState);
+    href?: string;
 };
+
+const METRI_URL = "https://app.metri.xyz/welcome";
 
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
@@ -29,6 +32,7 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Not registered",
         description: "Register your account on Metri to get started",
         cta: "Go to Metri",
+        href: METRI_URL,
     },
     "selecting-inviter": {
         id: "selecting-inviter",
@@ -58,12 +62,14 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Already on V2",
         description: "You are already registered on Circles v2",
         cta: "Go to Metri",
+        href: METRI_URL,
     },
     "migrated": {
         id: "migrated",
         title: "Migration complete",
         description: "Your migration is complete",
         cta: "Go to Metri",
+        href: METRI_URL,
     },
     "execute-migration": {
         id: "execute-migration",

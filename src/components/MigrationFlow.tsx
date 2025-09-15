@@ -11,6 +11,7 @@ import { CreateProfile } from "./CreateProfile";
 import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
+import { CirclesOverview } from "./CirclesOverview";
 
 interface MigrationFlowProps {
     address: Address;
@@ -40,6 +41,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
 
     const step = STEP_CONFIG[state];
     const canProceed = step.guard ? step.guard(ctx) : true;
+    const isLink = Boolean(step.href);
 
     const handlePrimary = async () => {
         if (!canProceed || isProcessing) return;
@@ -86,62 +88,28 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                 )}
 
                 {state !== "selecting-inviter" && state !== "create-profile" && (
-                    <>
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-medium text-gray-700">Avatar</h3>
-                            {state === "ready-to-migrate" && (
-                                <div className="flex items-center space-x-2">
-                                    <span className="badge badge-xs badge-error">{invitations.length} invitation{invitations.length !== 1 ? 's' : ''}</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
-                            <div className="flex items-center space-x-2">
-                                <img src={profile.previewImageUrl} alt="Avatar" className="w-8 h-8 rounded-full" />
-                                <div className="flex flex-col space-x-2">
-                                    {profile.name}
-                                    <span className="font-mono text-sm text-gray-900">
-                                        {truncateAddress(address)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <CopyButton text={address} />
-                                <a href={`https://explorer.aboutcircles.com/avatar/${address}`} target="_blank" rel="noopener noreferrer"
-                                    className="btn btn-sm btn-ghost btn-circle"
-                                    title="View on explorer"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </a>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">Balance</h3>
-                                <div className="text-xl font-semibold text-gray-900">
-                                    {circlesBalance.reduce((acc, balance) => acc + balance.circles, 0).toFixed(2)} CRC
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">Trust Connections</h3>
-                                <div className="text-xl font-semibold text-gray-900">
-                                    {trustConnections.length} trust{trustConnections.length > 1 ? "s" : ""}
-                                </div>
-                            </div>
-                        </div>
-                    </>
+                    <CirclesOverview invitations={invitations} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 
                 <div className="flex flex-col items-center space-y-3">
-                    <button
-                        onClick={() => handlePrimary()}
-                        className="btn btn-sm btn-primary"
-                        disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
-                    >
-                        {isProcessing ? "Processing..." : step.cta}
-                    </button>
+                    {isLink ? (
+                        <a
+                            href={step.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-primary"
+                        >
+                            {step.cta}
+                        </a>
+                    ) : (
+                        <button
+                            onClick={() => handlePrimary()}
+                            className="btn btn-sm btn-primary"
+                            disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
+                        >
+                            {isProcessing ? "Processing..." : step.cta}
+                        </button>
+                    )}
 
                     {state === "ready-to-migrate" && invitations.length === 0 && (
                         <a
