@@ -46,7 +46,7 @@ export default function WalletModal() {
             )}
 
             {/* Modal */}
-            <dialog ref={modalRef} className="modal">
+            <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
                 <div className={`modal-box ${currentView === 'main' ? 'max-w-lg' : 'max-w-2xl'} p-0`}>
                     {currentView === 'main' && account.address && (
                         <AccountView
