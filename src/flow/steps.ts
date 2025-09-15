@@ -1,13 +1,13 @@
 import { Address } from "viem";
 import { Sdk } from "@circles-sdk/sdk";
-import { InvitationWithProfile } from "../context/CirclesContext";
+import { AvatarWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
 
 type Ctx = {
     address: Address;
     sdk: Sdk;
-    invitationsWithProfiles: InvitationWithProfile[];
+    invitationsWithProfiles: AvatarWithProfile[];
     selectedInviter: `0x${string}` | null;
     draftProfile: Profile;
     profileErrors: string[];

@@ -10,8 +10,7 @@ import { MigrationStepper } from "./MigrationStepper";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
-        profile,
-        avatarData,
+        avatarWithProfile,
         circlesBalance,
         trustConnections,
         invitationsWithProfiles,
@@ -23,15 +22,15 @@ export function Dashboard({ address }: { address: Address }) {
     const currentState = stateStack[stateStack.length - 1];
 
     useEffect(() => {
-        const newState = avatarData?.hasV1 && avatarData?.version === 2
+        const newState = avatarWithProfile?.avatar?.hasV1 && avatarWithProfile?.avatar?.version === 2
             ? "migrated"
-            : avatarData?.hasV1
+            : avatarWithProfile?.avatar?.hasV1
                 ? "ready-to-migrate"
-                : avatarData?.version === 2
+                : avatarWithProfile?.avatar?.version === 2
                     ? "registered-v2"
                     : "not-registered";
         setStateStack([newState]);
-    }, [avatarData]);
+    }, [avatarWithProfile]);
 
     useLoadingToast({
         id: "safe",
@@ -59,7 +58,7 @@ export function Dashboard({ address }: { address: Address }) {
     const canGoBack = stateStack.length > 1;
     const showStepper = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"].includes(currentState);
 
-    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner) {
+    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner || !avatarWithProfile) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
@@ -95,7 +94,7 @@ export function Dashboard({ address }: { address: Address }) {
 
             <MigrationFlow
                 address={address}
-                profile={profile}
+                profile={avatarWithProfile?.profile}
                 pushState={pushState}
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}

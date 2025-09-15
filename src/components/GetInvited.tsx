@@ -1,23 +1,23 @@
 import { truncateAddress } from "../utils/address";
-import { InvitationWithProfile } from "../context/CirclesContext";
+import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface GetInvitedProps {
-    invitations: InvitationWithProfile[];
+    invitations: AvatarWithProfile[];
     onInviterSelected: (inviter: `0x${string}`) => void;
 }
 
 export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) {
     return (
         <div className="divide-y divide-gray-200">
-            {invitations.map((invitationWithProfile) => {
-                const { invitation, profile } = invitationWithProfile;
-                const displayName = profile?.name || invitation.name || 'Unknown';
-                const displayImage = profile?.previewImageUrl || invitation.avatar || '/profile.svg';
+            {invitations.map((avatarWithProfile) => {
+                const { avatar, profile } = avatarWithProfile;
+                const displayName = profile.name || avatar.name || 'Unknown';
+                const displayImage = profile.previewImageUrl || avatar.avatar || '/profile.svg';
                 
                 return (
                 <button
-                    key={invitation.avatar}
-                    onClick={() => onInviterSelected(invitation.avatar)}
+                    key={avatar.avatar}
+                    onClick={() => onInviterSelected(avatar.avatar)}
                     className="w-full flex items-center space-x-3 text-left"
                 >
                     <div className="w-10 h-10 rounded-full overflow-hidden">
@@ -32,7 +32,7 @@ export function GetInvited({ invitations, onInviterSelected }: GetInvitedProps) 
                             {displayName}
                         </div>
                         <div className="text-sm text-gray-500 font-mono">
-                            {truncateAddress(invitation.avatar)}
+                            {truncateAddress(avatar.avatar)}
                         </div>
                     </div>
                 </button>

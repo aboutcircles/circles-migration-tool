@@ -10,7 +10,7 @@ import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
 import { CirclesOverview } from "./CirclesOverview";
-import { InvitationWithProfile } from "../context/CirclesContext";
+import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface MigrationFlowProps {
     address: Address;
@@ -19,7 +19,7 @@ interface MigrationFlowProps {
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
     state: MigrationState;
-    invitationsWithProfiles: InvitationWithProfile[];
+    invitationsWithProfiles: AvatarWithProfile[];
     circlesSdkRunner: Sdk;
 }
 
