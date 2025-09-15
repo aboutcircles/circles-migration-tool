@@ -78,8 +78,12 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         guard: ({ invitations, selectedInviter }) =>
             invitations.length > 0 && !!selectedInviter,
         onNext: async ({ sdk, address, selectedInviter, draftProfile }) => {
-            const result = await sdk.migrateAvatar(address as `0x${string}`, selectedInviter || "0x0000000000000000000000000000000000000000", draftProfile);
-            console.log(result);
+            try {
+                await sdk.migrateAvatar(selectedInviter || "0x0000000000000000000000000000000000000000", address as `0x${string}`, draftProfile);
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
         },
         next: "migrated",
     },

@@ -51,7 +51,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                 await toast.promise(step.onNext(ctx), {
                     loading: "Migrating avatar…",
                     success: "Migration complete!",
-                    error: (e) => e,
+                    error: () => "Migration failed, please reach out to support on Discord",
                 });
             }
 
