@@ -1,4 +1,3 @@
-// utils/validateProfile.ts
 import { Profile } from "@circles-sdk/profiles";
 
 export type ProfileError = string;

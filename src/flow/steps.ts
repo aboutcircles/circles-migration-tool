@@ -26,13 +26,14 @@ type Step = {
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
         id: "not-registered",
-        title: "Create your Circles avatar",
-        cta: "Get invited",
-        next: "selecting-inviter",
+        title: "Not registered",
+        description: "Register your account on Metri to get started",
+        cta: "Go to Metri",
     },
     "selecting-inviter": {
         id: "selecting-inviter",
         title: "Choose an inviter",
+        description: "Choose an inviter to invite you to Circles",
         cta: "Continue",
         guard: ({ selectedInviter }) => !!selectedInviter,
         next: "create-profile",
@@ -40,6 +41,7 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
     "create-profile": {
         id: "create-profile",
         title: "Create profile",
+        description: "Create your new Circles profile",
         cta: "Review",
         guard: ({ profileErrors }) => profileErrors.length === 0,
         next: "execute-migration",
@@ -54,13 +56,14 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
     "registered-v2": {
         id: "registered-v2",
         title: "Already on V2",
-        cta: "Done",
-        next: "migrated",
+        description: "You are already registered on Circles v2",
+        cta: "Go to Metri",
     },
     "migrated": {
         id: "migrated",
         title: "Migration complete",
-        cta: "Close",
+        description: "Your migration is complete",
+        cta: "Go to Metri",
     },
     "execute-migration": {
         id: "execute-migration",
