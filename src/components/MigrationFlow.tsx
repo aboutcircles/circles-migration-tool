@@ -64,15 +64,15 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
     };
 
     return (
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
+        <>
             {/* Status Header */}
-            <div className="bg-green-50 border-b border-green-100 px-6 py-4">
+            <div className="bg-base-300/30 border border-black/10 px-6 py-4 rounded-md">
                 <h2 className="text-lg font-semibold text-gray-900">{step.title}</h2>
-                <p className="text-sm text-gray-600">{step.description}</p>
+                <p className="text-sm text-gray-400">{step.description}</p>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col w-full p-6 space-y-4">
+            <div className="flex flex-col w-full border border-black/10 px-10 py-6 rounded-md">
                 {state === "selecting-inviter" && (
                     <GetInvited
                         invitations={invitations}
@@ -89,20 +89,20 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                     <CirclesOverview invitations={invitations} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 
-                <div className="flex flex-col items-center space-y-3">
+                <div className="flex flex-col items-center space-y-3 mt-6">
                     {isLink ? (
                         <a
                             href={step.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-sm btn-primary"
+                            className="btn btn-primary"
                         >
                             {step.cta}
                         </a>
                     ) : (
                         <button
                             onClick={() => handlePrimary()}
-                            className="btn btn-sm btn-primary"
+                            className="btn btn-primary"
                             disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
                         >
                             {isProcessing ? "Processing..." : step.cta}
@@ -122,6 +122,6 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                     )}
                 </div>
             </div>
-        </div >
+        </>
     );
 }

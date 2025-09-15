@@ -56,6 +56,17 @@ export function Dashboard({ address }: { address: Address }) {
     };
 
     const canGoBack = stateStack.length > 1;
+    const showStepper = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"].includes(currentState);
+
+    const getStepStatus = (stepState: MigrationState) => {
+        const stepOrder = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"];
+        const currentIndex = stepOrder.indexOf(currentState);
+        const stepIndex = stepOrder.indexOf(stepState);
+
+        if (stepIndex < currentIndex) return "step-primary";
+        if (stepIndex === currentIndex) return "step-primary";
+        return "";
+    };
 
     if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner) {
         return (
@@ -76,17 +87,35 @@ export function Dashboard({ address }: { address: Address }) {
     }
 
     return (
-        <div className="max-w-4xl w-full mx-auto p-6">
+        <div className="max-w-4xl w-full mx-auto p-2 space-y-6">
             {canGoBack && (
                 <button
                     onClick={popState}
-                    className="btn btn-sm btn-ghost"
+                    className="btn btn-sm btn-ghost mb-4"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back</span>
                 </button>
             )}
 
+            {showStepper && (
+                <div className="">
+                    <ul className="steps steps-horizontal w-full">
+                        <li className={`step ${getStepStatus("ready-to-migrate")}`}>
+                            <div className="text-xs">Start</div>
+                        </li>
+                        <li className={`step ${getStepStatus("selecting-inviter")}`}>
+                            <div className="text-xs">Choose Inviter</div>
+                        </li>
+                        <li className={`step ${getStepStatus("create-profile")}`}>
+                            <div className="text-xs">Create Profile</div>
+                        </li>
+                        <li className={`step ${getStepStatus("execute-migration")}`}>
+                            <div className="text-xs">Execute</div>
+                        </li>
+                    </ul>
+                </div>
+            )}
 
             <MigrationFlow
                 address={address}
