@@ -42,14 +42,36 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     try {
       console.log(circlesSdkRunner);
       const fetchedAvatarData = await circlesSdkRunner.data.getAvatarInfo(address);
-      const fetchedCirclesBalance = await circlesSdkRunner.data.getTokenBalances(address);
-      const fetchedTrustConnections = await circlesSdkRunner.data.getAggregatedTrustRelations(address);
-      const fetchedInvitations = await circlesSdkRunner.data.getInvitations(address);
-      console.log(fetchedInvitations);
       setAvatarData(fetchedAvatarData);
-      setCirclesBalance(fetchedCirclesBalance);
-      setTrustConnections(fetchedTrustConnections);
-      setInvitations(fetchedInvitations);
+
+      const [balanceResult, trustResult, invitationsResult] = await Promise.allSettled([
+        circlesSdkRunner.data.getTokenBalances(address),
+        circlesSdkRunner.data.getAggregatedTrustRelations(address),
+        circlesSdkRunner.data.getInvitations(address)
+      ]);
+
+      if (balanceResult.status === 'fulfilled') {
+        setCirclesBalance(balanceResult.value);
+      } else {
+        console.warn('Failed to fetch balance:', balanceResult.reason);
+        setCirclesBalance([]);
+      }
+
+      if (trustResult.status === 'fulfilled') {
+        setTrustConnections(trustResult.value);
+      } else {
+        console.warn('Failed to fetch trust connections:', trustResult.reason);
+        setTrustConnections([]);
+      }
+
+      if (invitationsResult.status === 'fulfilled') {
+        setInvitations(invitationsResult.value);
+        console.log(invitationsResult.value);
+      } else {
+        console.warn('Failed to fetch invitations:', invitationsResult.reason);
+        setInvitations([]);
+      }
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch avatar data';
       setAvatarError(errorMessage);
