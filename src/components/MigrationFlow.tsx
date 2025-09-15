@@ -10,6 +10,7 @@ import { useState } from "react";
 import { CreateProfile } from "./CreateProfile";
 import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
+import toast from "react-hot-toast";
 
 interface MigrationFlowProps {
     address: Address;
@@ -23,33 +24,44 @@ interface MigrationFlowProps {
 }
 
 export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitations, circlesSdkRunner }: MigrationFlowProps) {
-  const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
-  const [draftProfile, setDraftProfile] = useState<Profile>({ name:"", description:"", previewImageUrl:"", imageUrl:"" });
-  const [profileErrors, setProfileErrors] = useState<string[]>([]);
+    const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
+    const [draftProfile, setDraftProfile] = useState<Profile>({ name: "", description: "", previewImageUrl: "", imageUrl: "" });
+    const [profileErrors, setProfileErrors] = useState<string[]>([]);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-  const ctx = {
-    address,
-    sdk: circlesSdkRunner,
-    invitations,
-    selectedInviter,
-    draftProfile,
-    profileErrors,
-  };
+    const ctx = {
+        address,
+        sdk: circlesSdkRunner,
+        invitations,
+        selectedInviter,
+        draftProfile,
+        profileErrors,
+    };
 
-  const step = STEP_CONFIG[state];
-  const canProceed = step.guard ? step.guard(ctx) : true;
+    const step = STEP_CONFIG[state];
+    const canProceed = step.guard ? step.guard(ctx) : true;
 
-  const handlePrimary = async () => {
-    if (!canProceed) return;
-    try {
-      if (step.onNext) await step.onNext(ctx);
-      const next =
-        typeof step.next === "function" ? step.next(ctx) : step.next;
-      if (next) pushState(next);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+    const handlePrimary = async () => {
+        if (!canProceed || isProcessing) return;
+        try {
+            setIsProcessing(true);
+            if (step.onNext) {
+                await toast.promise(step.onNext(ctx), {
+                    loading: "Migrating avatar…",
+                    success: "Migration complete!",
+                    error: (e) => e,
+                });
+            }
+
+            const next =
+                typeof step.next === "function" ? step.next(ctx) : step.next;
+            if (next) pushState(next);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -69,8 +81,8 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                 )}
                 {state === "create-profile" && (
                     <CreateProfile profile={draftProfile}
-                    onChange={setDraftProfile}
-                    onValidityChange={setProfileErrors} />
+                        onChange={setDraftProfile}
+                        onValidityChange={setProfileErrors} />
                 )}
 
                 {state !== "selecting-inviter" && state !== "create-profile" && (
@@ -126,9 +138,9 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                     <button
                         onClick={() => handlePrimary()}
                         className="btn btn-sm btn-primary"
-                        disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed}
+                        disabled={state === "ready-to-migrate" && invitations.length === 0 || !canProceed || isProcessing}
                     >
-                        {step.cta}
+                        {isProcessing ? "Processing..." : step.cta}
                     </button>
 
                     {state === "ready-to-migrate" && invitations.length === 0 && (

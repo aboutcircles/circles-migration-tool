@@ -19,7 +19,7 @@ type Step = {
     description?: string;
     cta: string;
     guard?: (c: Ctx) => boolean;
-    onNext?: (c: Ctx) => Promise<void> | void;
+    onNext?: (c: Ctx) => Promise<void>;
     next?: MigrationState | ((c: Ctx) => MigrationState);
 };
 
@@ -72,8 +72,8 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         guard: ({ invitations, selectedInviter }) =>
             invitations.length > 0 && !!selectedInviter,
         onNext: async ({ sdk, address, selectedInviter, draftProfile }) => {
-            if (!selectedInviter) return;
-            await sdk.migrateAvatar(address as `0x${string}`, selectedInviter, draftProfile);
+            const result = await sdk.migrateAvatar(address as `0x${string}`, selectedInviter || "0x0000000000000000000000000000000000000000", draftProfile);
+            console.log(result);
         },
         next: "migrated",
     },

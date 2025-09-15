@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { MigrationState } from "../types/migration";
 import { ArrowLeft } from "lucide-react";
 import { useWallet } from "../context/WalletContext";
+import { useLoadingToast } from "../hooks/useLoadingToast";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -16,7 +17,7 @@ export function Dashboard({ address }: { address: Address }) {
         isLoadingAvatarData,
         avatarError
     } = useCircles();
-    const {isLoadingSafe, circlesSdkRunner} = useWallet();
+    const { isLoadingSafe, circlesSdkRunner } = useWallet();
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const currentState = stateStack[stateStack.length - 1];
 
@@ -30,6 +31,21 @@ export function Dashboard({ address }: { address: Address }) {
                     : "not-registered";
         setStateStack([newState]);
     }, [avatarData]);
+
+    useLoadingToast({
+        id: "safe",
+        isLoading: isLoadingSafe,
+        loading: "Connecting your Safe…",
+        silentSuccess: true,
+    });
+
+    useLoadingToast({
+        id: "avatar",
+        isLoading: isLoadingAvatarData,
+        loading: "Checking your status on Circles…",
+        error: avatarError,
+        silentSuccess: true,
+    });
 
     const pushState = (newState: MigrationState) => {
         setStateStack(prev => [...prev, newState]);
@@ -54,19 +70,6 @@ export function Dashboard({ address }: { address: Address }) {
                             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (avatarError) {
-        return (
-            <div className="max-w-4xl mx-auto p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <h2 className="text-lg font-semibold text-red-800 mb-2">Error</h2>
-                    <p className="text-red-600">
-                        Impossible to check your status on Circles: {avatarError}
-                    </p>
                 </div>
             </div>
         );

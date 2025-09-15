@@ -20,7 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <WalletProvider>
           <CirclesProvider>
             <App />
-            <Toaster />
+            <Toaster toastOptions={{ position: 'bottom-right', duration: 3000 }} />
           </CirclesProvider>
         </WalletProvider>
       </QueryClientProvider>
