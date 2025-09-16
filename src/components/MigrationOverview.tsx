@@ -32,7 +32,7 @@ export function MigrationOverview({ draftProfile, selectedInviter, invitationsWi
             <div className="bg-warning/10 border border-warning/20 rounded-md p-4">
                 <div className="flex items-start gap-3">
                     <div className="text-sm text-base-content">
-                        <div className="font-medium mb-1">Ready to migrate</div>
+                        <div className="font-medium mb-1 text-warning">On chain migration</div>
                         <div className="text-base-content/70">
                             Your profile will be created and your avatar will be migrated to Circles v2.
                             This action is irreversible.

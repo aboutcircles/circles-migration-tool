@@ -30,7 +30,6 @@ export function Dashboard({ address }: { address: Address }) {
                 : avatarWithProfile?.avatar?.version === 2
                     ? "registered-v2"
                     : "not-registered";
-        console.log(newState);
         setStateStack([newState]);
     }, [avatarWithProfile]);
 

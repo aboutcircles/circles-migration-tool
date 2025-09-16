@@ -75,7 +75,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       try {
         const safeAddress = await findSafeFromSigner(signerAddress);
-        console.log('Found Safe address:', safeAddress, 'for signer:', signerAddress);
 
         setSafeAddress(safeAddress || undefined);
         let runner;
@@ -83,11 +82,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (safeAddress) {
 
           if (pkAccount) {
-            console.log('Initializing SDK with private key runner');
             runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.aboutcircles.com/');
             await runner.init(safeAddress as `0x${string}`);
           } else {
-            console.log('Initializing SDK with browser runner');
             runner = new SafeSdkBrowserContractRunner();
             await runner.init(safeAddress as `0x${string}`);
           }
