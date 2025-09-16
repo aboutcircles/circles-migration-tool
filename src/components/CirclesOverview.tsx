@@ -45,11 +45,9 @@ export function CirclesOverview({ invitationsWithProfiles, profile, address, cir
                     </div>
                 </div>
 
-                {invitationsWithProfiles.length > 0 && (
-                    <div className="badge badge-soft badge-sm">
-                        {invitationsWithProfiles.length} invitation{invitationsWithProfiles.length !== 1 ? 's' : ''}
-                    </div>
-                )}
+                <div className={`badge badge-soft badge-sm ${invitationsWithProfiles.length > 0 ? 'badge-neutral' : 'badge-error'}`}>
+                    {invitationsWithProfiles.length} invitation{invitationsWithProfiles.length !== 1 ? 's' : ''}
+                </div>
             </div>
 
             <div className="divide-y divide-base-300 mt-4 text-sm space-y">
