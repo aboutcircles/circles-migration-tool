@@ -16,70 +16,72 @@ export function MigrationStepper({ currentState }: MigrationStepperProps) {
     };
 
     return (
-        <div className="flex items-center w-full max-w-2xl mb-16">
-            {/* Step 1 */}
-            <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("ready-to-migrate") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                    1
+        <div className="w-full max-w-2xl mb-16 overflow-x-auto">
+            <div className="flex items-center min-w-max">
+                {/* Step 1 */}
+                <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        getStepStatus("ready-to-migrate") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
+                    }`}>
+                        1
+                    </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                        getStepStatus("ready-to-migrate") ? "text-black" : "text-gray-400"
+                    }`}>
+                        Start
+                    </span>
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                    getStepStatus("ready-to-migrate") ? "text-black" : "text-gray-400"
-                }`}>
-                    Start
-                </span>
-            </div>
 
-            {/* Connector */}
-            <div className="flex-1 h-px bg-gray-200 mx-4"></div>
+                {/* Connector */}
+                <div className="min-w-8 flex-1 h-px bg-gray-200 mx-4"></div>
 
-            {/* Step 2 */}
-            <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("selecting-inviter") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                    2
+                {/* Step 2 */}
+                <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        getStepStatus("selecting-inviter") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
+                    }`}>
+                        2
+                    </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                        getStepStatus("selecting-inviter") ? "text-black" : "text-gray-400"
+                    }`}>
+                        Choose Inviter
+                    </span>
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                    getStepStatus("selecting-inviter") ? "text-black" : "text-gray-400"
-                }`}>
-                    Choose Inviter
-                </span>
-            </div>
 
-            {/* Connector */}
-            <div className="flex-1 h-px bg-gray-200 mx-4"></div>
+                {/* Connector */}
+                <div className="min-w-8 flex-1 h-px bg-gray-200 mx-4"></div>
 
-            {/* Step 3 */}
-            <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("create-profile") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                    3
+                {/* Step 3 */}
+                <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        getStepStatus("create-profile") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
+                    }`}>
+                        3
+                    </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                        getStepStatus("create-profile") ? "text-black" : "text-gray-400"
+                    }`}>
+                        Create Profile
+                    </span>
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                    getStepStatus("create-profile") ? "text-black" : "text-gray-400"
-                }`}>
-                    Create Profile
-                </span>
-            </div>
 
-            {/* Connector */}
-            <div className="flex-1 h-px bg-gray-200 mx-4"></div>
+                {/* Connector */}
+                <div className="min-w-8 flex-1 h-px bg-gray-200 mx-4"></div>
 
-            {/* Step 4 */}
-            <div className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    getStepStatus("execute-migration") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
-                }`}>
-                    4
+                {/* Step 4 */}
+                <div className="flex items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                        getStepStatus("execute-migration") ? "bg-black text-white" : "bg-gray-200 text-gray-500"
+                    }`}>
+                        4
+                    </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                        getStepStatus("execute-migration") ? "text-black" : "text-gray-400"
+                    }`}>
+                        Execute
+                    </span>
                 </div>
-                <span className={`ml-2 text-sm font-medium ${
-                    getStepStatus("execute-migration") ? "text-black" : "text-gray-400"
-                }`}>
-                    Execute
-                </span>
             </div>
         </div>
     );

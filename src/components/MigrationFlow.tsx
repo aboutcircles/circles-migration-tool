@@ -68,13 +68,13 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
     return (
         <>
             {/* Status Header */}
-            <div className="bg-base-300/30 border border-black/10 px-6 py-4 rounded-md">
+            <div className="py-4">
                 <h2 className="text-lg font-semibold text-gray-900">{step.title}</h2>
                 <p className="text-sm text-gray-400">{step.description}</p>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col w-full border border-black/10 px-10 py-6 rounded-md">
+            <div className="flex flex-col w-full sm:border border-black/10 sm:px-10 py-6 rounded-md">
                 {state === "selecting-inviter" && (
                     <GetInvited
                         invitations={invitationsWithProfiles}
