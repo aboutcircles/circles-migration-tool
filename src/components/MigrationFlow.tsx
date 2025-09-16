@@ -10,6 +10,7 @@ import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
 import { CirclesOverview } from "./CirclesOverview";
+import { MigrationOverview } from "./MigrationOverview";
 import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface MigrationFlowProps {
@@ -86,7 +87,15 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                         onValidityChange={setProfileErrors} />
                 )}
 
-                {state !== "selecting-inviter" && state !== "create-profile" && (
+                {state === "execute-migration" && (
+                    <MigrationOverview 
+                        draftProfile={draftProfile}
+                        selectedInviter={selectedInviter}
+                        invitationsWithProfiles={invitationsWithProfiles}
+                    />
+                )}
+
+                {state !== "selecting-inviter" && state !== "create-profile" && state !== "execute-migration" && (
                     <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 

@@ -52,7 +52,6 @@ export function CirclesOverview({ invitationsWithProfiles, profile, address, cir
                 )}
             </div>
 
-            {/* Stats Section */}
             <div className="divide-y divide-base-300 mt-4 text-sm space-y">
                 <div className="flex justify-between items-center py-4">
                     <span className="text-base-content/70">Balance</span>

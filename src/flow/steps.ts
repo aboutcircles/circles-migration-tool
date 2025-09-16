@@ -74,6 +74,7 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
     "execute-migration": {
         id: "execute-migration",
         title: "Execute Migration",
+        description: "Review your profile and execute the migration",
         cta: "Execute Migration",
         guard: ({ invitationsWithProfiles, selectedInviter }) =>
             invitationsWithProfiles.length > 0 && !!selectedInviter,
