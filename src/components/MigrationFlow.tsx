@@ -112,7 +112,7 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
 
                     {state === "ready-to-migrate" && invitationsWithProfiles.length === 0 && (
                         <a
-                            href="https://circles.garden/"
+                            href="https://discord.com/invite/aboutcircles"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
