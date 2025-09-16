@@ -10,6 +10,7 @@
     "start": "serve -s dist"
   },
   "dependencies": {
+    "@circles-sdk/adapter-ethers": "^0.29.1",
     "@circles-sdk/adapter-safe": "^0.29.1",
     "@circles-sdk/data": "^0.29.1",
     "@circles-sdk/profiles": "^0.29.1",
@@ -18,6 +19,7 @@
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-query": "5.45.1",
     "bip39": "^3.1.0",
+    "ethers": "^6.15.0",
     "lucide-react": "^0.542.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

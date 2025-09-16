@@ -19,7 +19,7 @@ interface CirclesContextType {
   avatarError: string | null;
 }
 
-const fallbackProfile: Profile = {
+export const fallbackProfile: Profile = {
   name: "Avatar",
   previewImageUrl: "/profile.svg",
 };
@@ -41,13 +41,12 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     setAvatarError(null);
 
     try {
-      console.log(circlesSdkRunner);
       const fetchedAvatarData = await circlesSdkRunner.data.getAvatarInfo(address);
 
       if (fetchedAvatarData) {
         const avatarWithProfile = await fetchAvatarProfiles([fetchedAvatarData], circlesSdkRunner);
         setAvatarWithProfile(avatarWithProfile[0]);
-      }      
+      }
 
       const [balanceResult, trustResult, invitationsResult] = await Promise.allSettled([
         circlesSdkRunner.data.getTokenBalances(address),

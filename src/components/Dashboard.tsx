@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { useWallet } from "../context/WalletContext";
 import { useLoadingToast } from "../hooks/useLoadingToast";
 import { MigrationStepper } from "./MigrationStepper";
+import { fallbackProfile } from "../context/CirclesContext";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -29,6 +30,7 @@ export function Dashboard({ address }: { address: Address }) {
                 : avatarWithProfile?.avatar?.version === 2
                     ? "registered-v2"
                     : "not-registered";
+        console.log(newState);
         setStateStack([newState]);
     }, [avatarWithProfile]);
 
@@ -58,7 +60,7 @@ export function Dashboard({ address }: { address: Address }) {
     const canGoBack = stateStack.length > 1;
     const showStepper = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"].includes(currentState);
 
-    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner || !avatarWithProfile) {
+    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
@@ -94,7 +96,7 @@ export function Dashboard({ address }: { address: Address }) {
 
             <MigrationFlow
                 address={address}
-                profile={avatarWithProfile?.profile}
+                profile={avatarWithProfile?.profile || fallbackProfile}
                 pushState={pushState}
                 circlesBalance={circlesBalance || []}
                 trustConnections={trustConnections || []}

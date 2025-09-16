@@ -8,8 +8,10 @@ import {
   SafeSdkBrowserContractRunner,
   SafeSdkPrivateKeyContractRunner,
 } from '@circles-sdk/adapter-safe';
+import { JsonRpcProvider } from 'ethers';
 import { findSafeFromSigner } from '../utils/safeDerivation';
 import { Sdk } from '@circles-sdk/sdk';
+import { BrowserProviderContractRunner, PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
 
 interface WalletContextType {
   account: {
@@ -24,7 +26,7 @@ interface WalletContextType {
   safeAddress?: Address;
   circlesSdkRunner?: Sdk;
   isLoadingSafe: boolean;
-  setPkAccount: (account: {privateKey: string, account: PrivateKeyAccount} | undefined) => void;
+  setPkAccount: (account: { privateKey: string, account: PrivateKeyAccount } | undefined) => void;
   disconnect: () => void;
 }
 
@@ -33,7 +35,7 @@ const WalletContext = createContext<WalletContextType | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
-  const [pkAccount, setPkAccount] = useState<{privateKey: string, account: PrivateKeyAccount} | undefined>(undefined);
+  const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount } | undefined>(undefined);
   const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
   const [circlesSdkRunner, setCirclesSdkRunner] = useState<any>(undefined);
   const [isLoadingSafe, setIsLoadingSafe] = useState(false);
@@ -76,9 +78,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         console.log('Found Safe address:', safeAddress, 'for signer:', signerAddress);
 
         setSafeAddress(safeAddress || undefined);
+        let runner;
 
         if (safeAddress) {
-          let runner;
 
           if (pkAccount) {
             console.log('Initializing SDK with private key runner');
@@ -90,10 +92,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             await runner.init(safeAddress as `0x${string}`);
           }
           let sdk = new Sdk(runner);
-
           setCirclesSdkRunner(sdk);
         } else {
-          setCirclesSdkRunner(undefined);
+          if (pkAccount) {
+            const rpcProvider = new JsonRpcProvider('https://rpc.aboutcircles.com/');
+            runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
+            await runner.init();
+          } else {
+            runner = new BrowserProviderContractRunner();
+            await runner.init();
+          }
+          let sdk = new Sdk(runner as any);
+          setCirclesSdkRunner(sdk);
         }
 
       } catch (error) {
@@ -115,7 +125,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const value = {
     account: {
       isConnected,
-      address: safeAddress,
+      address: safeAddress || wagmiAccount.address,
     },
     chainId,
     chainName,
