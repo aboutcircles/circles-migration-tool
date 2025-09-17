@@ -86,7 +86,7 @@ export function Dashboard({ address }: { address: Address }) {
             {canGoBack && (
                 <button
                     onClick={popState}
-                    className="btn btn-sm btn-ghost mb-4"
+                    className="btn btn-sm btn-ghost mb-0 sm:mb-4"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back</span>

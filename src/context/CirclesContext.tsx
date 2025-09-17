@@ -99,6 +99,9 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
         try {
           const profileData = await circlesSdkRunner.profiles?.get(avatar.cidV0);
           if (profileData) {
+            if (!profileData.previewImageUrl) {
+              profileData.previewImageUrl = '/profile.svg';
+            }
             avatarWithProfile.profile = profileData;
           }
         } catch (error) {
