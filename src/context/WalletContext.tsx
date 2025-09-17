@@ -37,7 +37,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount } | undefined>(undefined);
   const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
-  const [circlesSdkRunner, setCirclesSdkRunner] = useState<any>(undefined);
+  const [circlesSdkRunner, setCirclesSdkRunner] = useState<Sdk | undefined>(undefined);
   const [isLoadingSafe, setIsLoadingSafe] = useState(false);
   const wagmiAccount = useAccount();
 
@@ -88,7 +88,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             runner = new SafeSdkBrowserContractRunner();
             await runner.init(safeAddress as `0x${string}`);
           }
-          let sdk = new Sdk(runner);
+          let sdk = new Sdk(runner as any);
           setCirclesSdkRunner(sdk);
         } else {
           if (pkAccount) {
