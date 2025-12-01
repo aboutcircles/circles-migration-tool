@@ -27,21 +27,24 @@ export function SelectWalletView({ onClose, onViewChange }: SelectWalletViewProp
 	};
 
 	return (
-		<div className="p-8">
+		<div className="p-6 sm:p-8">
 			{/* Header */}
-			<h1 className="text-2xl mb-5 font-bold text-base-content">Available Wallets</h1>
+			<h1 className="text-2xl sm:text-3xl mb-2 font-bold text-primary">Connect Wallet</h1>
+			<p className="text-base-content/70 mb-6 text-sm sm:text-base">
+				Choose your preferred wallet to continue
+			</p>
 
 			{/* Wallet Grid */}
-			<div className="grid grid-cols-2 gap-4 mb-6">
+			<div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
 				{/* Circles Garden Option */}
 				<button
-					className="group relative bg-base-100 hover:bg-base-200/50 border border-base-300 hover:border-primary/30 hover:cursor-pointer rounded-xl p-6 transition-all duration-200 flex flex-col items-center text-center"
+					className="group relative bg-white hover:bg-primary/5 border-2 border-base-300 hover:border-primary hover:cursor-pointer rounded-2xl p-5 sm:p-6 transition-all duration-200 flex flex-col items-center text-center shadow-sm hover:shadow-md"
 					onClick={() => onViewChange('circles-garden')}
 				>
-					<div className="w-12 h-12 bg-base-200 rounded-xl flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
-						<img src="/circles.svg" className="w-6 h-6" alt="Circles Garden" />
+					<div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+						<img src="/circles.svg" className="w-7 h-7 sm:w-8 sm:h-8" alt="Circles Garden" />
 					</div>
-					<span className="font-medium text-base-content group-hover:text-primary transition-colors">
+					<span className="font-semibold text-sm sm:text-base text-base-content group-hover:text-primary transition-colors">
 						Circles Garden
 					</span>
 				</button>
@@ -50,21 +53,21 @@ export function SelectWalletView({ onClose, onViewChange }: SelectWalletViewProp
 				{uniqueConnectors.map((connector) => (
 					<button
 						key={connector.uid}
-						className="group relative bg-base-100 hover:bg-base-200/50 border border-base-300 hover:border-primary/30 hover:cursor-pointer rounded-xl p-6 transition-all duration-200 flex flex-col items-center text-center"
+						className="group relative bg-white hover:bg-primary/5 border-2 border-base-300 hover:border-primary hover:cursor-pointer rounded-2xl p-5 sm:p-6 transition-all duration-200 flex flex-col items-center text-center shadow-sm hover:shadow-md"
 						onClick={() => handleConnect(connector)}
 					>
-						<div className="w-12 h-12 bg-base-200 rounded-xl flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
+						<div className="w-12 h-12 sm:w-14 sm:h-14 bg-base-200 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-primary/10 transition-colors">
 							{connector.icon ? (
 								<img
 									src={connector.icon}
-									className="w-6 h-6"
+									className="w-7 h-7 sm:w-8 sm:h-8"
 									alt={`${connector.name} icon`}
 								/>
 							) : (
-								<div className="w-6 h-6 bg-base-300 rounded"></div>
+								<div className="w-7 h-7 sm:w-8 sm:h-8 bg-base-300 rounded-lg"></div>
 							)}
 						</div>
-						<span className="font-medium text-base-content group-hover:text-primary transition-colors">
+						<span className="font-semibold text-sm sm:text-base text-base-content group-hover:text-primary transition-colors">
 							{connector.name}
 						</span>
 					</button>

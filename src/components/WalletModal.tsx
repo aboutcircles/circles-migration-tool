@@ -30,15 +30,15 @@ export default function WalletModal() {
         <>
             {account.isConnected && account.address ? (
                 <button
-                    className="btn btn-ghost flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-base-300/50 transition-all duration-200"
+                    className="btn btn-ghost flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-primary/10 transition-all duration-200 border border-transparent hover:border-primary/20"
                     onClick={() => openModal('main')}
                 >
-                    <span className="font-medium">{truncateAddress(account.address)}</span>
-                    <Menu size={20} />
+                    <span className="font-semibold text-base-content">{truncateAddress(account.address)}</span>
+                    <Menu size={20} className="text-primary" />
                 </button>
             ) : (
                 <button
-                    className="btn btn-neutral"
+                    className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all"
                     onClick={() => openModal('select-wallet')}
                 >
                     Connect Wallet
@@ -47,7 +47,7 @@ export default function WalletModal() {
 
             {/* Modal */}
             <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
-                <div className={`modal-box ${currentView === 'main' ? 'max-w-lg' : 'max-w-2xl'} p-0`}>
+                <div className={`modal-box ${currentView === 'main' ? 'max-w-lg' : 'max-w-2xl'} p-0 rounded-2xl shadow-2xl`}>
                     {currentView === 'main' && account.address && (
                         <AccountView
                             address={account.address}

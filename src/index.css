@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @plugin "daisyui" {
     themes: circles --default;
 }
@@ -9,31 +11,31 @@
   prefersdark: false; /* set as default light mode */
   color-scheme: light; /* color of browser-provided UI */
 
-  /* Base colors - clean, modern light theme */
+  /* Base colors - clean, modern light theme with subtle warmth */
   --color-base-100: #ffffff; /* Pure white for cards and main content */
-  --color-base-200: #f8fafc; /* Very light gray for subtle backgrounds */
-  --color-base-300: #e2e8f0; /* Light gray for borders and dividers */
-  --color-base-content: #1e293b; /* Dark slate for main text */
+  --color-base-200: #faf9fb; /* Very light lavender-tinted background */
+  --color-base-300: #e5e1ec; /* Light purple-gray for borders */
+  --color-base-content: #1a1626; /* Deep purple-black for main text */
 
-  /* Primary - Deep blue/purple */
-  --color-primary: #191568; /* Deep purple-blue for primary actions */
+  /* Primary - Circles brand purple from logo */
+  --color-primary: #38318B; /* Circles deep purple from logo */
   --color-primary-content: #ffffff; /* White text on primary */
 
-  /* Secondary - Lighter blue for secondary elements */
-  --color-secondary: #3b82f6; /* Bright blue for secondary actions */
+  /* Secondary - Complementary purple shade */
+  --color-secondary: #5b52a3; /* Lighter purple for secondary actions */
   --color-secondary-content: #ffffff; /* White text on secondary */
 
-  /* Accent - Purple accent */
-  --color-accent: #8b5cf6; /* Purple accent for highlights */
+  /* Accent - Circles brand coral/orange from logo */
+  --color-accent: #DF6552; /* Circles coral accent from logo */
   --color-accent-content: #ffffff; /* White text on accent */
 
-  /* Neutral - Clean grays for modern look */
-  --color-neutral: #001f24;
+  /* Neutral - Deep purple-tinted for modern look */
+  --color-neutral: #38318B; /* Using Circles purple for neutral buttons */
   --color-neutral-content: #ffffff; /* White text on neutral */
 
   /* Semantic colors */
-  --color-info: oklch(70% 0.15 220); /* Soft blue */
-  --color-info-content: oklch(98% 0.01 220);
+  --color-info: oklch(70% 0.15 270); /* Purple-tinted info */
+  --color-info-content: oklch(98% 0.01 270);
   
   --color-success: oklch(65% 0.16 140); /* Natural green */
   --color-success-content: oklch(98% 0.01 140);
@@ -44,10 +46,10 @@
   --color-error: oklch(65% 0.18 20); /* Soft red */
   --color-error-content: oklch(98% 0.01 20);
 
-  /* Border radius - modern, clean rounded corners */
-  --radius-selector: 0.75rem; /* Moderate rounding for modern feel */
-  --radius-field: 0.5rem; /* Clean field corners */
-  --radius-box: 0.75rem; /* Modern card rounding */
+  /* Border radius - modern, rounded design matching Circles style */
+  --radius-selector: 1rem; /* More rounding for modern feel */
+  --radius-field: 0.75rem; /* Rounded field corners */
+  --radius-box: 1rem; /* Modern card rounding */
 
   /* Base sizes */
   --size-selector: 0.25rem;
@@ -57,6 +59,26 @@
   --border: 1px;
 
   /* Effects */
-  --depth: 1; /* Subtle depth for clean modern look */
+  --depth: 2; /* Slightly more depth for visual interest */
   --noise: 0;
+}
+
+/* Custom font family */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom gradient backgrounds for visual interest */
+.gradient-circles {
+  background: linear-gradient(135deg, #faf9fb 0%, #f3f1f8 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #38318B 0%, #5b52a3 100%);
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #DF6552 0%, #f08577 100%);
 }
