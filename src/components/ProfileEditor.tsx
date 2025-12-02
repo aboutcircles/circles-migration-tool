@@ -53,7 +53,7 @@ export function ProfileEditor({ profile, onProfileChange }: ProfileEditorProps) 
                                 type="button"
                                 aria-label="Upload profile image"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="btn btn-neutral btn-circle btn-sm absolute -bottom-1 -right-1 shadow"
+                                className="btn btn-primary btn-circle btn-sm absolute -bottom-1 -right-1 shadow-lg hover:shadow-xl transition-all"
                             >
                                 <Plus className="w-4 h-4" />
                             </button>

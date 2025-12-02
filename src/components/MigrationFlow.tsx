@@ -68,13 +68,13 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
     return (
         <>
             {/* Status Header */}
-            <div className="py-4">
-                <h2 className="text-lg font-semibold text-gray-900">{step.title}</h2>
-                <p className="text-sm text-gray-400">{step.description}</p>
+            <div className="py-4 px-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-primary">{step.title}</h2>
+                <p className="text-sm sm:text-base text-base-content text-opacity-60 mt-1">{step.description}</p>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col w-full sm:border border-black/10 sm:px-10 py-6 rounded-md">
+            <div className="flex flex-col w-full bg-base-100 border border-base-300 px-4 sm:px-10 py-6 rounded-box shadow-lg">
                 {state === "selecting-inviter" && (
                     <GetInvited
                         invitations={invitationsWithProfiles}
@@ -105,14 +105,14 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                             href={step.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-neutral"
+                            className="btn btn-primary shadow-md hover:shadow-lg transition-all min-h-[44px] px-6"
                         >
                             {step.cta}
                         </a>
                     ) : (
                         <button
                             onClick={() => handlePrimary()}
-                            className="btn btn-neutral"
+                            className="btn btn-primary shadow-md hover:shadow-lg transition-all min-h-[44px] px-6"
                             disabled={state === "ready-to-migrate" && invitationsWithProfiles.length === 0 || !canProceed || isProcessing}
                         >
                             {isProcessing ? "Processing..." : step.cta}
@@ -124,10 +124,10 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                             href="https://discord.com/invite/aboutcircles"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                            className="flex items-center space-x-1 text-sm text-accent hover:text-accent hover:underline transition-colors min-h-[44px] items-center"
                         >
                             <span>Get invited to Circles</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-4 h-4" />
                         </a>
                     )}
                 </div>

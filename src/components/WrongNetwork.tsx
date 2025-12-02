@@ -4,13 +4,13 @@ export function WrongNetwork() {
     const { switchChain } = useSwitchChain();
 
     return (
-        <div className="absolute top-0 z-20 w-screen h-screen bg-black/50 flex text-black items-end sm:items-center justify-center">
-            <div className="bg-white p-8 rounded-t-lg sm:rounded-lg w-full sm:w-auto">
-                <h1 className="text-2xl font-bold">Wrong Network</h1>
-                <p className="mt-4">Please switch to the correct network to continue.</p>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-base-100 p-6 sm:p-8 rounded-box shadow-2xl w-full max-w-md border border-base-300">
+                <h1 className="text-2xl font-bold text-primary">Wrong Network</h1>
+                <p className="mt-4 text-base-content text-opacity-80">Please switch to Gnosis Chain to continue with your migration.</p>
                 <button
                     onClick={() => switchChain({ chainId: 100 })}
-                    className="btn btn-sm btn-neutral mt-4"
+                    className="btn btn-primary w-full mt-6 min-h-[44px] shadow-md hover:shadow-lg transition-all"
                 >
                     Switch to Gnosis Chain
                 </button>
