@@ -15,16 +15,16 @@
   --color-base-300: #e2e8f0; /* Light gray for borders and dividers */
   --color-base-content: #1e293b; /* Dark slate for main text */
 
-  /* Primary - Deep blue/purple */
-  --color-primary: #191568; /* Deep purple-blue for primary actions */
+  /* Primary - Circles brand purple from logo */
+  --color-primary: #38318B; /* Circles purple for primary actions */
   --color-primary-content: #ffffff; /* White text on primary */
 
-  /* Secondary - Lighter blue for secondary elements */
-  --color-secondary: #3b82f6; /* Bright blue for secondary actions */
+  /* Secondary - Darker shade of purple for depth */
+  --color-secondary: #2a2464; /* Darker purple for secondary actions */
   --color-secondary-content: #ffffff; /* White text on secondary */
 
-  /* Accent - Purple accent */
-  --color-accent: #8b5cf6; /* Purple accent for highlights */
+  /* Accent - Circles brand coral from logo */
+  --color-accent: #DF6552; /* Circles coral/red accent for highlights */
   --color-accent-content: #ffffff; /* White text on accent */
 
   /* Neutral - Clean grays for modern look */

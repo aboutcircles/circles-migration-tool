@@ -13,15 +13,15 @@ function App() {
 
 	return (
 		<>
-			<div className="w-full flex flex-col">
+			<div className="min-h-screen w-full flex flex-col bg-base-200">
 				<Navbar />
 				{/* Main content */}
-				<div className="px-4 py-8">
+				<div className="flex-1 px-4 py-8">
 					{account.isConnected && account.address ? (
 						<Dashboard address={account.address} />
 					) : (
-						<div className="mt-20 w-96 mx-auto border border-base-300 p-4 rounded-md shadow-sm">
-							<h1 className="text-lg font-bold text-center">Please connect your wallet to continue</h1>
+						<div className="mt-20 w-full max-w-md mx-auto bg-base-100 border border-base-300 p-8 rounded-box shadow-lg">
+							<h1 className="text-xl font-bold text-center text-base-content">Please connect your wallet to continue</h1>
 						</div>
 					)}
 				</div>

@@ -30,15 +30,15 @@ export default function WalletModal() {
         <>
             {account.isConnected && account.address ? (
                 <button
-                    className="btn btn-ghost flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-base-300/50 transition-all duration-200"
+                    className="btn btn-ghost flex items-center gap-2 px-3 sm:px-4 py-2 rounded-box hover:bg-base-300/50 transition-all duration-200 min-h-[44px]"
                     onClick={() => openModal('main')}
                 >
-                    <span className="font-medium">{truncateAddress(account.address)}</span>
+                    <span className="font-medium text-sm sm:text-base">{truncateAddress(account.address)}</span>
                     <Menu size={20} />
                 </button>
             ) : (
                 <button
-                    className="btn btn-neutral"
+                    className="btn btn-primary text-primary-content shadow-md hover:shadow-lg transition-all duration-200 min-h-[44px] px-4 sm:px-6"
                     onClick={() => openModal('select-wallet')}
                 >
                     Connect Wallet
