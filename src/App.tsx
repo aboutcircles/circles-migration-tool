@@ -12,7 +12,7 @@ function App() {
 	}
 
 	return (
-		<>
+		<div className="min-h-screen gradient-circles">
 			<div className="w-full flex flex-col">
 				<Navbar />
 				{/* Main content */}
@@ -20,13 +20,23 @@ function App() {
 					{account.isConnected && account.address ? (
 						<Dashboard address={account.address} />
 					) : (
-						<div className="mt-20 w-96 mx-auto border border-base-300 p-4 rounded-md shadow-sm">
-							<h1 className="text-lg font-bold text-center">Please connect your wallet to continue</h1>
+						<div className="mt-20 max-w-md mx-auto bg-white border border-base-300 p-8 rounded-2xl shadow-lg">
+							<h1 className="text-xl font-bold text-center text-base-content mb-2">
+								Welcome to Circles Migration
+							</h1>
+							<p className="text-center text-base-content/70 text-sm mb-6">
+								Connect your wallet to begin migrating your Circles profile to V2
+							</p>
+							<div className="flex justify-center">
+								<div className="w-24 h-24 opacity-20">
+									<img src="/circles.svg" alt="Circles" />
+								</div>
+							</div>
 						</div>
 					)}
 				</div>
 			</div>
-		</>
+		</div>
 	)
 }
 

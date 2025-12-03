@@ -24,19 +24,19 @@ type Step = {
     href?: string;
 };
 
-const METRI_URL = "https://app.metri.xyz/welcome";
+const GNOSIS_URL = "https://app.gnosis.io/welcome";
 
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
         id: "not-registered",
-        title: "Not registered",
-        description: "Register your account on Metri to get started",
-        cta: "Go to Metri",
-        href: METRI_URL,
+        title: "Not Registered",
+        description: "Create your account on Gnosis to get started",
+        cta: "Visit Gnosis app",
+        href: GNOSIS_URL,
     },
     "selecting-inviter": {
         id: "selecting-inviter",
-        title: "Choose an inviter",
+        title: "Choose an Inviter",
         description: "Choose an inviter to invite you to Circles",
         cta: "Continue",
         guard: ({ selectedInviter }) => !!selectedInviter,
@@ -44,7 +44,7 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
     },
     "create-profile": {
         id: "create-profile",
-        title: "Create profile",
+        title: "Create Profile",
         description: "Create your new Circles profile",
         cta: "Review",
         guard: ({ profileErrors }) => profileErrors.length === 0,
@@ -61,21 +61,21 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         id: "registered-v2",
         title: "Already on V2",
         description: "You are already registered on Circles v2",
-        cta: "Go to Metri",
-        href: METRI_URL,
+        cta: "Visit Gnosis app",
+        href: GNOSIS_URL,
     },
     "migrated": {
         id: "migrated",
-        title: "Migration complete",
+        title: "Migration Complete",
         description: "Your migration is complete",
-        cta: "Go to Metri",
-        href: METRI_URL,
+        cta: "Visit Gnosis app",
+        href: GNOSIS_URL,
     },
     "execute-migration": {
         id: "execute-migration",
-        title: "Execute Migration",
-        description: "Review your profile and execute the migration",
-        cta: "Execute Migration",
+        title: "Complete Migration",
+        description: "Review your profile and complete the migration",
+        cta: "Complete profile migration",
         guard: ({ invitationsWithProfiles, selectedInviter }) =>
             invitationsWithProfiles.length > 0 && !!selectedInviter,
         onNext: async ({ sdk, address, selectedInviter, draftProfile }) => {

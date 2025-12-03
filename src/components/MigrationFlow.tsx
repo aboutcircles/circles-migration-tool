@@ -68,13 +68,13 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
     return (
         <>
             {/* Status Header */}
-            <div className="py-4">
-                <h2 className="text-lg font-semibold text-gray-900">{step.title}</h2>
-                <p className="text-sm text-gray-400">{step.description}</p>
+            <div className="py-4 px-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-primary mb-2">{step.title}</h2>
+                <p className="text-sm sm:text-base text-base-content/70">{step.description}</p>
             </div>
 
             {/* Content */}
-            <div className="flex flex-col w-full sm:border border-black/10 sm:px-10 py-6 rounded-md">
+            <div className="flex flex-col w-full bg-white border border-base-300 sm:px-10 px-6 py-8 rounded-2xl shadow-lg">
                 {state === "selecting-inviter" && (
                     <GetInvited
                         invitations={invitationsWithProfiles}
@@ -99,20 +99,20 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                     <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 
-                <div className="flex flex-col items-center space-y-3 mt-6">
+                <div className="flex flex-col items-center space-y-3 mt-8">
                     {isLink ? (
                         <a
                             href={step.href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-neutral"
+                            className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all w-full sm:w-auto min-w-[200px]"
                         >
                             {step.cta}
                         </a>
                     ) : (
                         <button
                             onClick={() => handlePrimary()}
-                            className="btn btn-neutral"
+                            className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all w-full sm:w-auto min-w-[200px]"
                             disabled={state === "ready-to-migrate" && invitationsWithProfiles.length === 0 || !canProceed || isProcessing}
                         >
                             {isProcessing ? "Processing..." : step.cta}
@@ -124,10 +124,10 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
                             href="https://discord.com/invite/aboutcircles"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                            className="flex items-center space-x-1 text-sm text-primary hover:text-secondary transition-colors font-medium"
                         >
                             <span>Get invited to Circles</span>
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-4 h-4" />
                         </a>
                     )}
                 </div>
