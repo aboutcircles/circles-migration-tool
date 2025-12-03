@@ -24,15 +24,15 @@ type Step = {
     href?: string;
 };
 
-const METRI_URL = "https://app.metri.xyz/welcome";
+const GNOSIS_URL = "https://app.gnosis.io/welcome";
 
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
         id: "not-registered",
         title: "Not registered",
-        description: "Register your account on Metri to get started",
-        cta: "Go to Metri",
-        href: METRI_URL,
+        description: "Register your account on Gnosis to get started",
+        cta: "Go to Gnosis",
+        href: GNOSIS_URL,
     },
     "selecting-inviter": {
         id: "selecting-inviter",
@@ -62,14 +62,14 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Already on V2",
         description: "You are already registered on Circles v2",
         cta: "Go to Metri",
-        href: METRI_URL,
+        href: GNOSIS_URL,
     },
     "migrated": {
         id: "migrated",
         title: "Migration complete",
         description: "Your migration is complete",
-        cta: "Go to Metri",
-        href: METRI_URL,
+        cta: "Go to Gnosis",
+        href: GNOSIS_URL,
     },
     "execute-migration": {
         id: "execute-migration",
