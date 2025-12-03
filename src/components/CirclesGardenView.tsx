@@ -41,9 +41,8 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
     return (
         <div className="p-6 sm:p-8 max-w-2xl mx-auto">
             {/* Header */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-primary mb-2">Enter Secret Garden key phrase</h1>
-            <p className="text-sm sm:text-base text-base-content/70 mb-8">Please enter or paste your keyphrase from circles.garden below.</p>
-
+            <h1 className="text-2xl font-bold text-primary">Enter Circles Garden key phrase</h1>
+            <p className="text-sm text-base-content/70 mb-6">Please enter or paste your keyphrase from circles.garden below.</p>
             {/* Seed Phrase Input */}
             <div className="mb-6">
                 <div className="relative">
