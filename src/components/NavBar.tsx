@@ -14,7 +14,7 @@ export default function Navbar() {
                         Circles
                     </h1>
                     <p className="text-xs sm:text-sm text-base-content/60 font-medium -mt-0.5">
-                        Migration Tool
+                        Profile Migration
                     </p>
                 </div>
             </div>
