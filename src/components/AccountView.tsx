@@ -48,9 +48,9 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
 
             {/* External Links Section */}
             <div className="p-6">
-                <h4 className="text-sm font-semibold text-base-content mb-4">Quick Links</h4>
+                {/* <h4 className="text-sm font-semibold text-base-content mb-4">Quick Links</h4> */}
                 <div className="space-y-2">
-                    <a 
+                    {/* <a 
                         href="https://app.metri.xyz/welcome"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -58,14 +58,14 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
                     >
                         <span className="font-medium text-base-content group-hover:text-primary">Join Circles</span>
                         <ArrowUpRight size={16} className="text-base-content/40 group-hover:text-primary" />
-                    </a>
+                    </a> */}
                     <a
                         href="https://discord.com/invite/aboutcircles"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-between w-full p-3 text-sm rounded-xl hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all duration-200 group"
                     >
-                        <span className="font-medium text-base-content group-hover:text-primary">Get Help</span>
+                        <span className="font-medium text-base-content group-hover:text-primary">Support</span>
                         <ArrowUpRight size={16} className="text-base-content/40 group-hover:text-primary" />
                     </a>
                 </div>
