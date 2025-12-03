@@ -63,13 +63,13 @@ export function Dashboard({ address }: { address: Address }) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-6">
                 <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded-md w-48 mb-6"></div>
-                    <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
-                        <div className="h-6 bg-gray-200 rounded w-64"></div>
-                        <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    <div className="h-10 bg-base-200 rounded-xl w-48 mb-6"></div>
+                    <div className="bg-white rounded-2xl shadow-lg p-8 space-y-4">
+                        <div className="h-6 bg-base-200 rounded-lg w-64"></div>
+                        <div className="h-4 bg-base-200 rounded-lg w-32"></div>
                         <div className="space-y-2">
-                            <div className="h-4 bg-gray-200 rounded w-full"></div>
-                            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                            <div className="h-4 bg-base-200 rounded-lg w-full"></div>
+                            <div className="h-4 bg-base-200 rounded-lg w-3/4"></div>
                         </div>
                     </div>
                 </div>
@@ -86,7 +86,7 @@ export function Dashboard({ address }: { address: Address }) {
             {canGoBack && (
                 <button
                     onClick={popState}
-                    className="btn btn-sm btn-ghost mb-0 sm:mb-4"
+                    className="btn btn-sm btn-ghost mb-0 sm:mb-4 hover:bg-base-200 rounded-xl"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     <span>Back</span>
