@@ -82,7 +82,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (safeAddress) {
 
           if (pkAccount) {
-            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.aboutcircles.com/');
+            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.circlesubi.network/');
             await runner.init(safeAddress as `0x${string}`);
           } else {
             runner = new SafeSdkBrowserContractRunner();
@@ -92,7 +92,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setCirclesSdkRunner(sdk);
         } else {
           if (pkAccount) {
-            const rpcProvider = new JsonRpcProvider('https://rpc.aboutcircles.com/');
+            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network/');
             runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
             await runner.init();
           } else {
