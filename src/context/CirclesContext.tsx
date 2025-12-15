@@ -3,6 +3,7 @@ import { Profile } from '@circles-sdk/profiles';
 import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { useWallet } from './WalletContext';
 import { Sdk } from "@circles-sdk/sdk";
+import { MOCK_INVITATIONS } from '../test/mockInvitations';
 
 // Invitation source types - indicates how the invitation was created
 export type InvitationSource = 'trust' | 'escrow' | 'atScale';
@@ -43,6 +44,9 @@ export const fallbackProfile: Profile = {
   name: "Avatar",
   previewImageUrl: "/profile.svg",
 };
+
+// Set to true to test UI with mock invitation data (all 3 types)
+const USE_MOCK_INVITATIONS = true;
 
 const CirclesContext = createContext<CirclesContextType | null>(null);
 
@@ -91,7 +95,11 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
         setTrustConnections([]);
       }
 
-      if (invitationsResult.status === 'fulfilled') {
+      if (USE_MOCK_INVITATIONS) {
+        // Use mock data to test UI with all 3 invitation types
+        console.log('[DEV] Using mock invitation data');
+        setInvitationsWithProfiles(MOCK_INVITATIONS);
+      } else if (invitationsResult.status === 'fulfilled') {
         const invitationsData = invitationsResult.value;
         const invitationsWithProfiles = await fetchInvitationProfiles(invitationsData, circlesSdkRunner);
         setInvitationsWithProfiles(invitationsWithProfiles);
