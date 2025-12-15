@@ -1,15 +1,22 @@
 import { Profile } from "@circles-sdk/profiles";
-import { AvatarWithProfile } from "../context/CirclesContext";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface MigrationOverviewProps {
     draftProfile: Profile;
     selectedInviter: `0x${string}` | null;
-    invitationsWithProfiles: AvatarWithProfile[];
+    invitationsWithProfiles: InvitationWithProfile[];
 }
+
+// Map invitation source to human-readable label
+const sourceLabels = {
+    trust: 'Trust-based',
+    escrow: 'Escrow',
+    atScale: 'Referral'
+};
 
 export function MigrationOverview({ draftProfile, selectedInviter, invitationsWithProfiles }: MigrationOverviewProps) {
     const inviterWithProfile = invitationsWithProfiles.find(
-        (invitation) => invitation.avatar.avatar === selectedInviter
+        (invitation) => invitation.address === selectedInviter
     );
 
     return (
@@ -25,9 +32,16 @@ export function MigrationOverview({ draftProfile, selectedInviter, invitationsWi
                 </div>
                 <div className="flex justify-between items-start py-2 border-t border-base-300 pt-4">
                     <span className="text-base-content/70 font-medium">Invited by</span>
-                    <span className="font-bold text-primary text-right">
-                        {inviterWithProfile?.profile.name || "No name"}
-                    </span>
+                    <div className="text-right">
+                        <span className="font-bold text-primary block">
+                            {inviterWithProfile?.profile.name || "No name"}
+                        </span>
+                        {inviterWithProfile?.source && (
+                            <span className="text-xs text-base-content/50">
+                                ({sourceLabels[inviterWithProfile.source]} invitation)
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 

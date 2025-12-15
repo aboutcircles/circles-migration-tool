@@ -4,6 +4,26 @@ import { AvatarRow, TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data"
 import { useWallet } from './WalletContext';
 import { Sdk } from "@circles-sdk/sdk";
 
+// Invitation source types - indicates how the invitation was created
+export type InvitationSource = 'trust' | 'escrow' | 'atScale';
+
+// Unified invitation type that works with all sources
+export interface InvitationWithProfile {
+  address: `0x${string}`;
+  source: InvitationSource;
+  profile: Profile;
+  // Trust-specific fields
+  balance?: string;
+  // Escrow-specific fields
+  escrowedAmount?: string;
+  escrowDays?: number;
+  // At-scale-specific fields
+  originInviter?: `0x${string}`;
+  // Common fields
+  blockNumber?: number;
+  timestamp?: number;
+}
+
 export interface AvatarWithProfile {
   avatar: AvatarRow;
   profile: Profile;
@@ -14,7 +34,7 @@ interface CirclesContextType {
   trustConnections: TrustRelationRow[] | undefined;
   profileError: string | null;
   avatarWithProfile: AvatarWithProfile | undefined;
-  invitationsWithProfiles: AvatarWithProfile[] | undefined;
+  invitationsWithProfiles: InvitationWithProfile[] | undefined;
   isLoadingAvatarData: boolean;
   avatarError: string | null;
 }
@@ -33,7 +53,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
   const [avatarWithProfile, setAvatarWithProfile] = useState<AvatarWithProfile | undefined>();
   const [isLoadingAvatarData, setIsLoadingAvatarData] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
-  const [invitationsWithProfiles, setInvitationsWithProfiles] = useState<AvatarWithProfile[] | undefined>();
+  const [invitationsWithProfiles, setInvitationsWithProfiles] = useState<InvitationWithProfile[] | undefined>();
   const { account, circlesSdkRunner } = useWallet();
 
   const fetchAvatarData = async (address: `0x${string}`, circlesSdkRunner: Sdk) => {
@@ -51,7 +71,10 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
       const [balanceResult, trustResult, invitationsResult] = await Promise.allSettled([
         circlesSdkRunner.data.getTokenBalances(address),
         circlesSdkRunner.data.getAggregatedTrustRelations(address),
-        circlesSdkRunner.data.getInvitations(address)
+        // Use getAllInvitations if available, otherwise fall back to getInvitations
+        (circlesSdkRunner.data as any).getAllInvitations
+          ? (circlesSdkRunner.data as any).getAllInvitations(address)
+          : circlesSdkRunner.data.getInvitations(address)
       ]);
 
       if (balanceResult.status === 'fulfilled') {
@@ -70,8 +93,8 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
 
       if (invitationsResult.status === 'fulfilled') {
         const invitationsData = invitationsResult.value;
-        const avatarsWithProfiles = await fetchAvatarProfiles(invitationsData, circlesSdkRunner);
-        setInvitationsWithProfiles(avatarsWithProfiles);
+        const invitationsWithProfiles = await fetchInvitationProfiles(invitationsData, circlesSdkRunner);
+        setInvitationsWithProfiles(invitationsWithProfiles);
       } else {
         console.warn('Failed to fetch invitations:', invitationsResult.reason);
         setInvitationsWithProfiles([]);
@@ -88,13 +111,13 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
 
   const fetchAvatarProfiles = async (avatars: AvatarRow[], circlesSdkRunner: Sdk) => {
     const avatarsWithProfiles: AvatarWithProfile[] = [];
-    
+
     for (const avatar of avatars) {
-      const avatarWithProfile: AvatarWithProfile = { 
+      const avatarWithProfile: AvatarWithProfile = {
         avatar: avatar,
         profile: fallbackProfile
       };
-      
+
       if (avatar.cidV0) {
         try {
           const profileData = await circlesSdkRunner.profiles?.get(avatar.cidV0);
@@ -108,11 +131,92 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
           console.warn(`Failed to fetch profile for avatar ${avatar.avatar}, using fallback:`, error);
         }
       }
-      
+
       avatarsWithProfiles.push(avatarWithProfile);
     }
 
     return avatarsWithProfiles;
+  };
+
+  // Fetch invitation profiles - handles both old (AvatarRow[]) and new (AllInvitationsResponse) formats
+  const fetchInvitationProfiles = async (invitationsData: any, circlesSdkRunner: Sdk): Promise<InvitationWithProfile[]> => {
+    const invitationsWithProfiles: InvitationWithProfile[] = [];
+
+    // Check if this is the new AllInvitationsResponse format
+    if (invitationsData && invitationsData.all) {
+      // New format: AllInvitationsResponse with all, trustInvitations, escrowInvitations, atScaleInvitations
+      for (const invitation of invitationsData.all) {
+        let profile = fallbackProfile;
+
+        // Try to get profile from avatarInfo.cidV0
+        if (invitation.avatarInfo?.cidV0) {
+          try {
+            const profileData = await circlesSdkRunner.profiles?.get(invitation.avatarInfo.cidV0);
+            if (profileData) {
+              if (!profileData.previewImageUrl) {
+                profileData.previewImageUrl = '/profile.svg';
+              }
+              profile = profileData;
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch profile for inviter ${invitation.address}, using fallback:`, error);
+          }
+        }
+
+        // Use name from avatarInfo if profile doesn't have one
+        if (profile === fallbackProfile && invitation.avatarInfo?.name) {
+          profile = { ...fallbackProfile, name: invitation.avatarInfo.name };
+        }
+
+        const invitationWithProfile: InvitationWithProfile = {
+          address: invitation.address as `0x${string}`,
+          source: invitation.source,
+          profile,
+          balance: invitation.source === 'trust' ? invitation.balance : undefined,
+          escrowedAmount: invitation.source === 'escrow' ? invitation.escrowedAmount : undefined,
+          escrowDays: invitation.source === 'escrow' ? invitation.escrowDays : undefined,
+          originInviter: invitation.source === 'atScale' ? invitation.originInviter : undefined,
+          blockNumber: invitation.blockNumber,
+          timestamp: invitation.timestamp,
+        };
+
+        invitationsWithProfiles.push(invitationWithProfile);
+      }
+    } else if (Array.isArray(invitationsData)) {
+      // Old format: AvatarRow[] - treat all as trust-based invitations
+      for (const avatar of invitationsData) {
+        let profile = fallbackProfile;
+
+        if (avatar.cidV0) {
+          try {
+            const profileData = await circlesSdkRunner.profiles?.get(avatar.cidV0);
+            if (profileData) {
+              if (!profileData.previewImageUrl) {
+                profileData.previewImageUrl = '/profile.svg';
+              }
+              profile = profileData;
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch profile for avatar ${avatar.avatar}, using fallback:`, error);
+          }
+        }
+
+        // Use name from avatar if profile doesn't have one
+        if (profile === fallbackProfile && avatar.name) {
+          profile = { ...fallbackProfile, name: avatar.name };
+        }
+
+        const invitationWithProfile: InvitationWithProfile = {
+          address: avatar.avatar as `0x${string}`,
+          source: 'trust', // Old format was always trust-based
+          profile,
+        };
+
+        invitationsWithProfiles.push(invitationWithProfile);
+      }
+    }
+
+    return invitationsWithProfiles;
   };
 
   useEffect(() => {
