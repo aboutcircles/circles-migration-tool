@@ -25,7 +25,7 @@ function App() {
 								Welcome to Circles Migration
 							</h1>
 							<p className="text-center text-base-content/70 text-sm mb-6">
-								Connect your wallet to begin migrating your Circles profile to V2
+								Import your keyphrase from Circles Garden to migrate to v2
 							</p>
 							<div className="flex justify-center">
 								<div className="w-24 h-24 opacity-20">

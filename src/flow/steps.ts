@@ -24,7 +24,7 @@ type Step = {
     href?: string;
 };
 
-const GNOSIS_URL = "https://app.gnosis.io/welcome";
+const GNOSIS_URL = "https://app.gnosis.io/welcome/import";
 
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {

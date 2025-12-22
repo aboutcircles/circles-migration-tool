@@ -2,20 +2,15 @@ import { useState, useRef } from "react";
 import { useWallet } from "../context/WalletContext";
 import { truncateAddress } from "../utils/address";
 import { AccountView } from "./AccountView";
-import { SelectWalletView } from "./SelectWalletView";
 import { CirclesGardenView } from "./CirclesGardenView";
 import { Menu } from "lucide-react";
 
-export type ModalView = 'main' | 'circles-garden' | 'select-wallet';
+export type ModalView = 'main' | 'circles-garden';
 
 export default function WalletModal() {
     const { account, chainName, disconnect } = useWallet();
     const [currentView, setCurrentView] = useState<ModalView>('main');
     const modalRef = useRef<HTMLDialogElement>(null);
-
-    const handleViewChange = (view: ModalView) => {
-        setCurrentView(view);
-    };
 
     const openModal = (view: ModalView = 'main') => {
         setCurrentView(view);
@@ -39,9 +34,9 @@ export default function WalletModal() {
             ) : (
                 <button
                     className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all"
-                    onClick={() => openModal('select-wallet')}
+                    onClick={() => openModal('circles-garden')}
                 >
-                    Connect Wallet
+                    Start migration
                 </button>
             )}
 
@@ -55,9 +50,6 @@ export default function WalletModal() {
                             disconnect={disconnect}
                             onClose={closeModal}
                         />
-                    )}
-                    {currentView === 'select-wallet' && (
-                        <SelectWalletView onClose={closeModal} onViewChange={handleViewChange} />
                     )}
                     {currentView === 'circles-garden' && (
                         <CirclesGardenView onClose={closeModal} />
