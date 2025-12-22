@@ -11,7 +11,7 @@ import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
 import { CirclesOverview } from "./CirclesOverview";
 import { MigrationOverview } from "./MigrationOverview";
-import { AvatarWithProfile } from "../context/CirclesContext";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface MigrationFlowProps {
     address: Address;
@@ -20,7 +20,7 @@ interface MigrationFlowProps {
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
     state: MigrationState;
-    invitationsWithProfiles: AvatarWithProfile[];
+    invitationsWithProfiles: InvitationWithProfile[];
     circlesSdkRunner: Sdk;
 }
 

@@ -5,10 +5,10 @@ import { TokenBalanceRow } from "@circles-sdk/data";
 import { TrustRelationRow } from "@circles-sdk/data";
 import { Address } from "viem";
 import { Profile } from "@circles-sdk/profiles";
-import { AvatarWithProfile } from "../context/CirclesContext";
+import { InvitationWithProfile } from "../context/CirclesContext";
 
 interface CirclesOverviewProps {
-    invitationsWithProfiles: AvatarWithProfile[];
+    invitationsWithProfiles: InvitationWithProfile[];
     profile: Profile;
     address: Address;
     circlesBalance: TokenBalanceRow[];
