@@ -89,7 +89,7 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
                 disabled={wordCount !== 24}
                 className="btn btn-neutral btn-lg w-full rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50"
             >
-                Connect Wallet
+                Continue
             </button>
         </div>
     );
