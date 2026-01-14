@@ -5,7 +5,9 @@ import { Dashboard } from "./components/Dashboard";
 
 
 function App() {
+	console.log('[App] Rendering...');
 	const { account, isWrongNetwork } = useWallet();
+	console.log('[App] account:', account, 'isWrongNetwork:', isWrongNetwork);
 
 	if (isWrongNetwork) {
 		return <WrongNetwork />;

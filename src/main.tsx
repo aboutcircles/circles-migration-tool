@@ -11,6 +11,7 @@ import { WalletProvider } from './context/WalletContext.tsx'
 import { Toaster } from 'react-hot-toast'
 import { CirclesProvider } from './context/CirclesContext.tsx'
 
+console.log('[main] Starting app...');
 const queryClient = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

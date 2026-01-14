@@ -13,6 +13,19 @@ import { findSafeFromSigner } from '../utils/safeDerivation';
 import { Sdk } from '@circles-sdk/sdk';
 import { BrowserProviderContractRunner, PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
 
+// Get network config for Gnosis chain
+const gnosisConfig = NETWORK_CONFIG[gnosis.id];
+
+// Circles SDK config - uses indexer for data queries (circles_* methods)
+const circlesSdkConfig = {
+  circlesRpcUrl: gnosisConfig.circlesRpcUrl,
+  v1HubAddress: gnosisConfig.v1HubAddress,
+  v2HubAddress: gnosisConfig.v2HubAddress,
+  migrationAddress: gnosisConfig.migrationAddress,
+  nameRegistryAddress: gnosisConfig.nameRegistryAddress,
+  profileServiceUrl: gnosisConfig.profileServiceUrl,
+};
+
 interface WalletContextType {
   account: {
     isConnected: boolean;
@@ -33,6 +46,7 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
+  console.log('[WalletProvider] Mounting...');
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
   const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount } | undefined>(undefined);
@@ -72,42 +86,51 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoadingSafe(true);
+      console.log('[WalletContext] Starting SDK init for:', signerAddress);
 
       try {
+        console.log('[WalletContext] Finding Safe...');
         const safeAddress = await findSafeFromSigner(signerAddress);
+        console.log('[WalletContext] Safe found:', safeAddress);
 
         setSafeAddress(safeAddress || undefined);
         let runner;
 
         if (safeAddress) {
-
+          console.log('[WalletContext] Initializing Safe runner...');
           if (pkAccount) {
-            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.circlesubi.network/');
+            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, gnosisConfig.chainRpcUrl);
             await runner.init(safeAddress as `0x${string}`);
           } else {
             runner = new SafeSdkBrowserContractRunner();
             await runner.init(safeAddress as `0x${string}`);
           }
-          let sdk = new Sdk(runner as any);
+          console.log('[WalletContext] Runner initialized, creating SDK...');
+          let sdk = new Sdk(runner as any, circlesSdkConfig);
+          console.log('[WalletContext] SDK created');
           setCirclesSdkRunner(sdk);
         } else {
+          console.log('[WalletContext] Initializing EOA runner...');
           if (pkAccount) {
-            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network/');
+            const rpcProvider = new JsonRpcProvider(gnosisConfig.chainRpcUrl);
             runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
             await runner.init();
           } else {
             runner = new BrowserProviderContractRunner();
             await runner.init();
           }
-          let sdk = new Sdk(runner as any);
+          console.log('[WalletContext] Runner initialized, creating SDK...');
+          let sdk = new Sdk(runner as any, circlesSdkConfig);
+          console.log('[WalletContext] SDK created');
           setCirclesSdkRunner(sdk);
         }
 
       } catch (error) {
-        console.error('Error finding Safe address or initializing SDK:', error);
+        console.error('[WalletContext] Error:', error);
         setSafeAddress(undefined);
         setCirclesSdkRunner(undefined);
       } finally {
+        console.log('[WalletContext] Init complete, setting isLoadingSafe=false');
         setIsLoadingSafe(false);
       }
     };
