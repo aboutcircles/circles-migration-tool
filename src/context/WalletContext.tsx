@@ -24,6 +24,7 @@ interface WalletContextType {
   isWrongNetwork: boolean;
   isMounted: boolean;
   safeAddress?: Address;
+  eoaAddress?: Address;
   circlesSdkRunner?: Sdk;
   isLoadingSafe: boolean;
   setPkAccount: (account: { privateKey: string, account: PrivateKeyAccount } | undefined) => void;
@@ -75,6 +76,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
       try {
         const safeAddress = await findSafeFromSigner(signerAddress);
+        console.log('Safe Address fetched:', safeAddress || 'No Safe found');
+        console.log('Signer EOA Address:', signerAddress);
 
         setSafeAddress(safeAddress || undefined);
         let runner;
@@ -130,6 +133,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     isWrongNetwork: isMounted && isWrongNetwork,
     isMounted,
     safeAddress,
+    eoaAddress: signerAddress,
     circlesSdkRunner,
     isLoadingSafe,
     setPkAccount,

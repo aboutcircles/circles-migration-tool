@@ -3,9 +3,12 @@ import { Sdk } from "@circles-sdk/sdk";
 import { AvatarWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
+import { checkEoaBalance, requestFunding } from "../utils/funding";
 
 type Ctx = {
     address: Address;
+    eoaAddress?: Address;
+    safeAddress?: Address;
     sdk: Sdk;
     invitationsWithProfiles: AvatarWithProfile[];
     selectedInviter: `0x${string}` | null;
@@ -78,8 +81,18 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         cta: "Complete profile migration",
         guard: ({ invitationsWithProfiles, selectedInviter }) =>
             invitationsWithProfiles.length > 0 && !!selectedInviter,
-        onNext: async ({ sdk, address, selectedInviter, draftProfile }) => {
+        onNext: async ({ sdk, address, eoaAddress, safeAddress, selectedInviter, draftProfile }) => {
             try {
+                // Check EOA balance before migration if EOA address is available
+                if (eoaAddress) {
+                    const hasSufficientBalance = await checkEoaBalance(eoaAddress);
+
+                    if (!hasSufficientBalance) {
+                        console.log("EOA balance insufficient, requesting funding...");
+                        await requestFunding(eoaAddress, safeAddress);
+                    }
+                }
+
                 await sdk.migrateAvatar(selectedInviter || "0x0000000000000000000000000000000000000000", address as `0x${string}`, draftProfile);
             } catch (error) {
                 console.error(error);
