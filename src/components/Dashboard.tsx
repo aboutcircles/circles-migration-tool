@@ -18,7 +18,7 @@ export function Dashboard({ address }: { address: Address }) {
         isLoadingAvatarData,
         avatarError
     } = useCircles();
-    const { isLoadingSafe, circlesSdkRunner } = useWallet();
+    const { isLoadingSafe, circlesSdkRunner, safeAddress, eoaAddress } = useWallet();
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const currentState = stateStack[stateStack.length - 1];
 
@@ -95,6 +95,8 @@ export function Dashboard({ address }: { address: Address }) {
 
             <MigrationFlow
                 address={address}
+                eoaAddress={eoaAddress}
+                safeAddress={safeAddress}
                 profile={avatarWithProfile?.profile || fallbackProfile}
                 pushState={pushState}
                 circlesBalance={circlesBalance || []}

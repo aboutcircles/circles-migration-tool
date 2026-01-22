@@ -15,6 +15,8 @@ import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface MigrationFlowProps {
     address: Address;
+    eoaAddress?: Address;
+    safeAddress?: Address;
     profile: Profile;
     pushState: (state: MigrationState) => void;
     circlesBalance: TokenBalanceRow[];
@@ -24,7 +26,7 @@ interface MigrationFlowProps {
     circlesSdkRunner: Sdk;
 }
 
-export function MigrationFlow({ address, profile, state, pushState, circlesBalance, trustConnections, invitationsWithProfiles, circlesSdkRunner }: MigrationFlowProps) {
+export function MigrationFlow({ address, eoaAddress, safeAddress, profile, state, pushState, circlesBalance, trustConnections, invitationsWithProfiles, circlesSdkRunner }: MigrationFlowProps) {
     const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
     const [draftProfile, setDraftProfile] = useState<Profile>({ name: "", description: "", previewImageUrl: "", imageUrl: "" });
     const [profileErrors, setProfileErrors] = useState<string[]>([]);
@@ -32,6 +34,8 @@ export function MigrationFlow({ address, profile, state, pushState, circlesBalan
 
     const ctx = {
         address,
+        eoaAddress,
+        safeAddress,
         sdk: circlesSdkRunner,
         invitationsWithProfiles,
         selectedInviter,

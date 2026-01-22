@@ -30,8 +30,9 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
 
             const keyFromMnemonic = mnemonicToEntropy(seedPhrase);
             const account = privateKeyToAccount(`0x${keyFromMnemonic}` as `0x${string}`);
+            console.log('EOA Address derived from seed phrase:', account.address);
             setPkAccount({privateKey: `0x${keyFromMnemonic}`, account: account});
-            
+
             onClose?.();
         } catch (error) {
             toast.error('Error processing seed phrase. Please try again.');
