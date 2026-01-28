@@ -7,7 +7,7 @@ const SERVERLESS_FUNCTION_URL = import.meta.env.VITE_FUNDING_SERVICE_URL || "";
 export async function checkEoaBalance(eoaAddress: Address): Promise<boolean> {
   const publicClient = createPublicClient({
     chain: gnosis,
-    transport: http("https://rpc.circlesubi.network/"),
+    transport: http("https://rpc.aboutcircles.com"),
   });
 
   const balance = await publicClient.getBalance({
