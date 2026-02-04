@@ -17,6 +17,7 @@ interface CirclesContextType {
   invitationsWithProfiles: AvatarWithProfile[] | undefined;
   isLoadingAvatarData: boolean;
   avatarError: string | null;
+  refreshData: () => Promise<void>;
 }
 
 export const fallbackProfile: Profile = {
@@ -128,6 +129,12 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     }
   }, [account.isConnected, account.address, circlesSdkRunner]);
 
+  const refreshData = async () => {
+    if (account.isConnected && account.address && circlesSdkRunner) {
+      await fetchAvatarData(account.address as `0x${string}`, circlesSdkRunner);
+    }
+  };
+
   const value = {
     circlesBalance,
     trustConnections,
@@ -136,6 +143,7 @@ export function CirclesProvider({ children }: { children: ReactNode }) {
     invitationsWithProfiles,
     isLoadingAvatarData,
     avatarError,
+    refreshData,
   };
 
   return <CirclesContext.Provider value={value}>{children}</CirclesContext.Provider>;

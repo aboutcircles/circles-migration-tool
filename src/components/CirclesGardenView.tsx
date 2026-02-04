@@ -1,5 +1,5 @@
 import { mnemonicToEntropy, validateMnemonic } from 'bip39';
-import { Eye, EyeOff, Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock, Download } from 'lucide-react';
 import { useState } from 'react';
 import { privateKeyToAccount } from 'viem/accounts';
 import { useWallet } from '../context/WalletContext';
@@ -18,6 +18,24 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
 
     const toggleVisibility = () => {
         setIsVisible(!isVisible);
+    };
+
+    const handleImportFromLocalStorage = () => {
+        try {
+            const storedKey = localStorage.getItem('circles-production-mainnet-privateKey');
+            if (!storedKey) {
+                toast.error('No key found in localStorage. Please enter your seed phrase manually.');
+                return;
+            }
+            const privateKey = storedKey.startsWith('0x') ? storedKey : `0x${storedKey}`;
+            const account = privateKeyToAccount(privateKey as `0x${string}`);
+            console.log('EOA Address derived from localStorage key:', account.address);
+            setPkAccount({ privateKey, account });
+
+            onClose?.();
+        } catch (error) {
+            toast.error('Error reading key from localStorage. Please enter your seed phrase manually.');
+        }
     };
 
     const handleValidate = async () => {
@@ -92,6 +110,21 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
             >
                 Continue
             </button>
+
+            {/* Divider */}
+            <div className="divider text-base-content/50 my-6">OR</div>
+
+            {/* Import from localStorage */}
+            <button
+                onClick={handleImportFromLocalStorage}
+                className="btn btn-outline btn-lg w-full rounded-xl transition-all"
+            >
+                <Download size={18} />
+                Import from browser (localStorage)
+            </button>
+            <p className="text-xs text-base-content/50 mt-2 text-center">
+                Reads the key stored by Circles Garden in your browser's localStorage.
+            </p>
         </div>
     );
 } 
