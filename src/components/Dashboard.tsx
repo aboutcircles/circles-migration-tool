@@ -8,6 +8,7 @@ import { useWallet } from "../context/WalletContext";
 import { useLoadingToast } from "../hooks/useLoadingToast";
 import { MigrationStepper } from "./MigrationStepper";
 import { fallbackProfile } from "../context/CirclesContext";
+import { V1BalanceMigration } from "./V1BalanceMigration";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -16,9 +17,11 @@ export function Dashboard({ address }: { address: Address }) {
         trustConnections,
         invitationsWithProfiles,
         isLoadingAvatarData,
-        avatarError
+        avatarError,
+        refreshData
     } = useCircles();
     const { isLoadingSafe, circlesSdkRunner, safeAddress, eoaAddress } = useWallet();
+    const [activeTab, setActiveTab] = useState<"profile" | "balance">("profile");
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const currentState = stateStack[stateStack.length - 1];
 
@@ -79,32 +82,62 @@ export function Dashboard({ address }: { address: Address }) {
 
     return (
         <div className="max-w-4xl w-full mx-auto p-2 space-y-6">
-            {showStepper && (
-                <MigrationStepper currentState={currentState} />
-            )}
-
-            {canGoBack && (
+            <div role="tablist" className="tabs tabs-bordered tabs-lg">
                 <button
-                    onClick={popState}
-                    className="btn btn-sm btn-ghost mb-0 sm:mb-4 hover:bg-base-200 rounded-xl"
+                    role="tab"
+                    className={`tab ${activeTab === "profile" ? "tab-active font-semibold" : ""}`}
+                    onClick={() => setActiveTab("profile")}
                 >
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Back</span>
+                    Profile Migration
                 </button>
-            )}
+                <button
+                    role="tab"
+                    className={`tab ${activeTab === "balance" ? "tab-active font-semibold" : ""}`}
+                    onClick={() => setActiveTab("balance")}
+                >
+                    Balance Migration
+                </button>
+            </div>
 
-            <MigrationFlow
-                address={address}
-                eoaAddress={eoaAddress}
-                safeAddress={safeAddress}
-                profile={avatarWithProfile?.profile || fallbackProfile}
-                pushState={pushState}
-                circlesBalance={circlesBalance || []}
-                trustConnections={trustConnections || []}
-                state={currentState}
-                invitationsWithProfiles={invitationsWithProfiles || []}
-                circlesSdkRunner={circlesSdkRunner}
-            />
+            {activeTab === "profile" ? (
+                <>
+                    {showStepper && (
+                        <MigrationStepper currentState={currentState} />
+                    )}
+
+                    {canGoBack && (
+                        <button
+                            onClick={popState}
+                            className="btn btn-sm btn-ghost mb-0 sm:mb-4 hover:bg-base-200 rounded-xl"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            <span>Back</span>
+                        </button>
+                    )}
+
+                    <MigrationFlow
+                        address={address}
+                        eoaAddress={eoaAddress}
+                        safeAddress={safeAddress}
+                        profile={avatarWithProfile?.profile || fallbackProfile}
+                        pushState={pushState}
+                        circlesBalance={circlesBalance || []}
+                        trustConnections={trustConnections || []}
+                        state={currentState}
+                        invitationsWithProfiles={invitationsWithProfiles || []}
+                        circlesSdkRunner={circlesSdkRunner}
+                    />
+                </>
+            ) : (
+                <V1BalanceMigration
+                    address={address}
+                    eoaAddress={eoaAddress}
+                    safeAddress={safeAddress}
+                    circlesBalance={circlesBalance || []}
+                    circlesSdkRunner={circlesSdkRunner}
+                    onMigrationComplete={refreshData}
+                />
+            )}
         </div>
     );
 }
