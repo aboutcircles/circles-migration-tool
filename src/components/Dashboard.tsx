@@ -9,6 +9,7 @@ import { useLoadingToast } from "../hooks/useLoadingToast";
 import { MigrationStepper } from "./MigrationStepper";
 import { fallbackProfile } from "../context/CirclesContext";
 import { V1BalanceMigration } from "./V1BalanceMigration";
+import { SeedPhraseDisplay } from "./SeedPhraseDisplay";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -99,6 +100,8 @@ export function Dashboard({ address }: { address: Address }) {
                 </button>
             </div>
 
+           
+
             {activeTab === "profile" ? (
                 <>
                     {showStepper && (
@@ -138,6 +141,8 @@ export function Dashboard({ address }: { address: Address }) {
                     onMigrationComplete={refreshData}
                 />
             )}
+             <SeedPhraseDisplay />
         </div>
+        
     );
 }

@@ -27,7 +27,8 @@ interface WalletContextType {
   eoaAddress?: Address;
   circlesSdkRunner?: Sdk;
   isLoadingSafe: boolean;
-  setPkAccount: (account: { privateKey: string, account: PrivateKeyAccount } | undefined) => void;
+  seedPhrase?: string;
+  setPkAccount: (account: { privateKey: string, account: PrivateKeyAccount, seedPhrase?: string } | undefined) => void;
   disconnect: () => void;
 }
 
@@ -36,7 +37,7 @@ const WalletContext = createContext<WalletContextType | null>(null);
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
   const [isMounted, setIsMounted] = useState(false);
-  const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount } | undefined>(undefined);
+  const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount, seedPhrase?: string } | undefined>(undefined);
   const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
   const [circlesSdkRunner, setCirclesSdkRunner] = useState<Sdk | undefined>(undefined);
   const [isLoadingSafe, setIsLoadingSafe] = useState(false);
@@ -136,6 +137,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     eoaAddress: signerAddress,
     circlesSdkRunner,
     isLoadingSafe,
+    seedPhrase: pkAccount?.seedPhrase,
     setPkAccount,
     disconnect,
   };
