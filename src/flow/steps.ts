@@ -3,17 +3,18 @@ import { Sdk } from "@circles-sdk/sdk";
 import { AvatarWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
-import { checkEoaBalance, requestFunding } from "../utils/funding";
+import { validateHumanRegistrationWithInviter } from "../utils/invitationValidation";
+import { hasAnyMigratableV1Balances, isNoBalancesRpcError, migrateAvatarWithoutBalances } from "../utils/migrationFallback";
 
 type Ctx = {
     address: Address;
-    eoaAddress?: Address;
-    safeAddress?: Address;
     sdk: Sdk;
     invitationsWithProfiles: AvatarWithProfile[];
+    needsInviter: boolean;
     selectedInviter: `0x${string}` | null;
     draftProfile: Profile;
     profileErrors: string[];
+    selectedTrustRelations: Address[];
 };
 
 type Step = {
@@ -28,6 +29,7 @@ type Step = {
 };
 
 const GNOSIS_URL = "https://app.gnosis.io/welcome/import";
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
@@ -58,7 +60,7 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Migrate to V2",
         description: "Your v1 account is ready to be migrated to v2",
         cta: "Start migration",
-        next: "selecting-inviter",
+        next: ({ needsInviter }) => needsInviter ? "selecting-inviter" : "create-profile",
     },
     "registered-v2": {
         id: "registered-v2",
@@ -79,21 +81,68 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Complete Migration",
         description: "Review your profile and complete the migration",
         cta: "Complete profile migration",
-        guard: ({ invitationsWithProfiles, selectedInviter }) =>
-            invitationsWithProfiles.length > 0 && !!selectedInviter,
-        onNext: async ({ sdk, address, eoaAddress, safeAddress, selectedInviter, draftProfile }) => {
+        guard: ({ needsInviter, invitationsWithProfiles, selectedInviter }) =>
+            !needsInviter || (invitationsWithProfiles.length > 0 && !!selectedInviter),
+        onNext: async ({ sdk, address, needsInviter, selectedInviter, draftProfile, selectedTrustRelations }) => {
             try {
-                // Check EOA balance before migration if EOA address is available
-                if (eoaAddress) {
-                    const hasSufficientBalance = await checkEoaBalance(eoaAddress);
+                let inviter: `0x${string}`;
+                if (needsInviter) {
+                    if (!selectedInviter) {
+                        throw new Error("No inviter selected for migration");
+                    }
+                    inviter = selectedInviter;
+                } else {
+                    inviter = ZERO_ADDRESS;
+                }
 
-                    if (!hasSufficientBalance) {
-                        console.log("EOA balance insufficient, requesting funding...");
-                        await requestFunding(eoaAddress, safeAddress);
+                if (needsInviter) {
+                    const validationResult = await validateHumanRegistrationWithInviter(
+                        sdk,
+                        address,
+                        inviter as Address,
+                    );
+
+                    if (!validationResult.isValid) {
+                        throw new Error(
+                            validationResult.reason ?? "Selected inviter is not currently valid on-chain. Please choose another inviter or request a fresh invite."
+                        );
                     }
                 }
 
-                await sdk.migrateAvatar(selectedInviter || "0x0000000000000000000000000000000000000000", address as `0x${string}`, draftProfile);
+                try {
+                    await sdk.migrateAvatar(
+                        inviter,
+                        address as `0x${string}`,
+                        draftProfile,
+                        selectedTrustRelations.length > 0
+                            ? selectedTrustRelations as `0x${string}`[]
+                            : undefined
+                    );
+                } catch (error) {
+                    if (!isNoBalancesRpcError(error)) {
+                        throw error;
+                    }
+
+                    const hasMigratableBalances = await hasAnyMigratableV1Balances(
+                        sdk,
+                        address as `0x${string}`
+                    );
+                    if (hasMigratableBalances) {
+                        throw new Error(
+                            "Migration could not verify your v1 balances due to an RPC issue. Please retry so balances can be migrated safely."
+                        );
+                    }
+
+                    await migrateAvatarWithoutBalances(
+                        sdk,
+                        inviter,
+                        address as `0x${string}`,
+                        draftProfile,
+                        selectedTrustRelations.length > 0
+                            ? selectedTrustRelations as `0x${string}`[]
+                            : undefined
+                    );
+                }
             } catch (error) {
                 console.error(error);
                 throw error;

@@ -3,11 +3,25 @@ import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface MigrationOverviewProps {
     draftProfile: Profile;
+    needsInviter: boolean;
+    isV1Organization: boolean;
     selectedInviter: `0x${string}` | null;
     invitationsWithProfiles: AvatarWithProfile[];
+    migratableTrustRelationCount: number;
+    migrateTrustRelations: boolean;
+    onMigrateTrustRelationsChange: (enabled: boolean) => void;
 }
 
-export function MigrationOverview({ draftProfile, selectedInviter, invitationsWithProfiles }: MigrationOverviewProps) {
+export function MigrationOverview({
+    draftProfile,
+    needsInviter,
+    isV1Organization,
+    selectedInviter,
+    invitationsWithProfiles,
+    migratableTrustRelationCount,
+    migrateTrustRelations,
+    onMigrateTrustRelationsChange,
+}: MigrationOverviewProps) {
     const inviterWithProfile = invitationsWithProfiles.find(
         (invitation) => invitation.avatar.avatar === selectedInviter
     );
@@ -24,9 +38,15 @@ export function MigrationOverview({ draftProfile, selectedInviter, invitationsWi
                     </span>
                 </div>
                 <div className="flex justify-between items-start py-2 border-t border-base-300 pt-4">
-                    <span className="text-base-content/70 font-medium">Invited by</span>
+                    <span className="text-base-content/70 font-medium">
+                        {needsInviter ? "Invited by" : "Migration mode"}
+                    </span>
                     <span className="font-bold text-primary text-right">
-                        {inviterWithProfile?.profile.name || "No name"}
+                        {needsInviter
+                            ? inviterWithProfile?.profile.name || "No name"
+                            : isV1Organization
+                                ? "Organization migration"
+                                : "Self migration"}
                     </span>
                 </div>
             </div>
@@ -47,6 +67,27 @@ export function MigrationOverview({ draftProfile, selectedInviter, invitationsWi
                     </div>
                 </div>
             </div>
+
+            {migratableTrustRelationCount > 0 && (
+                <div className="bg-base-200/40 border border-base-300 rounded-xl p-5">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="checkbox checkbox-primary checkbox-sm mt-0.5"
+                            checked={migrateTrustRelations}
+                            onChange={(event) => onMigrateTrustRelationsChange(event.target.checked)}
+                        />
+                        <div className="text-sm">
+                            <div className="font-semibold text-base-content">
+                                Migrate trust relations
+                            </div>
+                            <div className="text-base-content/70">
+                                Include {migratableTrustRelationCount} existing trust relation{migratableTrustRelationCount === 1 ? "" : "s"} in this migration.
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            )}
         </div>
     );
 }

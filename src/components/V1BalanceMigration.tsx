@@ -3,13 +3,10 @@ import { Address } from "viem";
 import { TokenBalanceRow } from "@circles-sdk/data";
 import { Sdk } from "@circles-sdk/sdk";
 import { truncateAddress } from "../utils/address";
-import { checkEoaBalance, requestFunding } from "../utils/funding";
 import toast from "react-hot-toast";
 
 interface V1BalanceMigrationProps {
     address: Address;
-    eoaAddress?: Address;
-    safeAddress?: Address;
     circlesBalance: TokenBalanceRow[];
     circlesSdkRunner: Sdk;
     onMigrationComplete?: () => Promise<void>;
@@ -23,7 +20,7 @@ interface ClassifiedBalance {
     ownerVersion: number | null;
 }
 
-export function V1BalanceMigration({ address, eoaAddress, safeAddress, circlesBalance, circlesSdkRunner, onMigrationComplete }: V1BalanceMigrationProps) {
+export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, onMigrationComplete }: V1BalanceMigrationProps) {
     const [eligibleBalances, setEligibleBalances] = useState<ClassifiedBalance[]>([]);
     const [ineligibleBalances, setIneligibleBalances] = useState<ClassifiedBalance[]>([]);
     const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
@@ -93,19 +90,15 @@ export function V1BalanceMigration({ address, eoaAddress, safeAddress, circlesBa
         checkEligibility();
     }, [checkEligibility]);
 
+    useEffect(() => {
+        setMigrationComplete(false);
+    }, [address]);
+
     const handleMigrate = async () => {
         if (selectedTokens.size === 0 || isMigrating) return;
 
         setIsMigrating(true);
         try {
-            if (eoaAddress) {
-                const hasSufficientBalance = await checkEoaBalance(eoaAddress);
-                if (!hasSufficientBalance) {
-                    console.log("EOA balance insufficient, requesting funding...");
-                    await requestFunding(eoaAddress, safeAddress);
-                }
-            }
-
             const tokenAddresses = Array.from(selectedTokens) as `0x${string}`[];
             await toast.promise(
                 circlesSdkRunner.migrateV1Tokens(address as `0x${string}`, tokenAddresses),

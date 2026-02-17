@@ -2,15 +2,37 @@ import { ArrowUpRight, X } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { CopyButton } from "./CopyButton";
 import { Address } from "viem";
+import { SafeAvatarTag } from "../utils/safeAvatarTags";
 
 interface AccountViewProps {
     address: Address;
+    safeAddress?: Address;
+    safeAddresses: Address[];
+    safeAvatarTags: Record<string, SafeAvatarTag>;
+    isLoadingSafeAvatarTags: boolean;
+    onSafeSelected: (safe: Address) => void;
     connectedChain: string;
     disconnect: () => void;
     onClose: () => void
 }
 
-export function AccountView({ address, connectedChain, disconnect, onClose }: AccountViewProps) {
+const getTagClass = (tag: SafeAvatarTag): string => {
+    return tag.startsWith("v2")
+        ? "badge-success"
+        : "badge-warning";
+};
+
+export function AccountView({
+    address,
+    safeAddress,
+    safeAddresses,
+    safeAvatarTags,
+    isLoadingSafeAvatarTags,
+    onSafeSelected,
+    connectedChain,
+    disconnect,
+    onClose,
+}: AccountViewProps) {
 
     const handleDisconnect = () => {
         disconnect();
@@ -48,7 +70,43 @@ export function AccountView({ address, connectedChain, disconnect, onClose }: Ac
 
             {/* External Links Section */}
             <div className="p-6">
-                {/* <h4 className="text-sm font-semibold text-base-content mb-4">Quick Links</h4> */}
+                {safeAddresses.length > 0 && (
+                    <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-base-content mb-3">Select Account for Migration</h4>
+                        {safeAddresses.length > 1 && isLoadingSafeAvatarTags && (
+                            <p className="text-xs text-base-content/60 mb-2">Loading Safe status tags...</p>
+                        )}
+                        <div className="space-y-2 max-h-56 overflow-y-auto">
+                            {safeAddresses.map((safe) => {
+                                const isSelected = safeAddress?.toLowerCase() === safe.toLowerCase();
+                                const safeTag = safeAvatarTags[safe.toLowerCase()];
+                                return (
+                                    <div key={safe} className="flex items-center justify-between gap-2 border border-base-300 rounded-xl p-3">
+                                        <div className="min-w-0">
+                                            <span className="font-mono text-xs break-all block">{safe}</span>
+                                            {safeTag && (
+                                                <span className={`badge badge-sm mt-1 ${getTagClass(safeTag)}`}>
+                                                    {safeTag}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <CopyButton text={safe} />
+                                            <button
+                                                onClick={() => onSafeSelected(safe)}
+                                                className={`btn btn-xs rounded-lg ${isSelected ? "btn-primary" : "btn-outline"}`}
+                                                disabled={isSelected}
+                                            >
+                                                {isSelected ? "Selected" : "Use Safe"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
                 <div className="space-y-2">
                     <a
                         href="https://discord.com/invite/aboutcircles"

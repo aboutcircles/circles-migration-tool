@@ -8,7 +8,16 @@ import { Menu } from "lucide-react";
 export type ModalView = 'main' | 'circles-garden';
 
 export default function WalletModal() {
-    const { account, chainName, disconnect } = useWallet();
+    const {
+        account,
+        chainName,
+        disconnect,
+        safeAddress,
+        safeAddresses,
+        safeAvatarTags,
+        isLoadingSafeAvatarTags,
+        setSelectedSafeAddress,
+    } = useWallet();
     const [currentView, setCurrentView] = useState<ModalView>('main');
     const modalRef = useRef<HTMLDialogElement>(null);
 
@@ -46,6 +55,11 @@ export default function WalletModal() {
                     {currentView === 'main' && account.address && (
                         <AccountView
                             address={account.address}
+                            safeAddress={safeAddress}
+                            safeAddresses={safeAddresses}
+                            safeAvatarTags={safeAvatarTags}
+                            isLoadingSafeAvatarTags={isLoadingSafeAvatarTags}
+                            onSafeSelected={setSelectedSafeAddress}
                             connectedChain={chainName || 'Unknown'}
                             disconnect={disconnect}
                             onClose={closeModal}

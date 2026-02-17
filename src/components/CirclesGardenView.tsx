@@ -1,10 +1,16 @@
 import { mnemonicToEntropy, validateMnemonic } from 'bip39';
 import { Eye, EyeOff, Lock, Download, AlertTriangle, X } from 'lucide-react';
 import { useState } from 'react';
-import { privateKeyToAccount } from 'viem/accounts';
+import { Address } from 'viem';
+import { PrivateKeyAccount, privateKeyToAccount } from 'viem/accounts';
 import { useWallet } from '../context/WalletContext';
-import { findSafeFromSigner } from '../utils/safeDerivation';
+import { findSafesFromSigner } from '../utils/safeDerivation';
 import toast from 'react-hot-toast';
+import { CopyButton } from './CopyButton';
+import { JsonRpcProvider } from 'ethers';
+import { PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
+import { Sdk } from '@circles-sdk/sdk';
+import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
 
 interface CirclesGardenViewProps {
     onClose?: () => void;
@@ -15,12 +21,69 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
     const [isVisible, setIsVisible] = useState(false);
     
     const [showNoSafeModal, setShowNoSafeModal] = useState(false);
+    const [showSelectSafeModal, setShowSelectSafeModal] = useState(false);
+    const [availableSafes, setAvailableSafes] = useState<Address[]>([]);
+    const [safeAvatarTags, setSafeAvatarTags] = useState<Record<string, SafeAvatarTag>>({});
+    const [pendingAccount, setPendingAccount] = useState<{ privateKey: `0x${string}`; account: PrivateKeyAccount; seedPhrase?: string } | null>(null);
     const [isCheckingSafe, setIsCheckingSafe] = useState(false);
-    const { setPkAccount } = useWallet();
+    const { setPkAccount, setSelectedSafeAddress } = useWallet();
     const wordCount = seedPhrase.trim() ? seedPhrase.trim().split(/\s+/).length : 0;
 
     const toggleVisibility = () => {
         setIsVisible(!isVisible);
+    };
+
+    const loadSafeAvatarTags = async (
+        privateKey: `0x${string}`,
+        safes: Address[]
+    ): Promise<Record<string, SafeAvatarTag>> => {
+        try {
+            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
+            const runner = new PrivateKeyContractRunner(rpcProvider, privateKey);
+            await runner.init();
+            const sdk = new Sdk(runner as any);
+            return await fetchSafeAvatarTags(sdk, safes);
+        } catch (error) {
+            console.warn('Failed to fetch Safe status tags:', error);
+            return {};
+        }
+    };
+
+    const getTagClass = (tag: SafeAvatarTag): string => {
+        return tag.startsWith("v2")
+            ? "badge-success"
+            : "badge-warning";
+    };
+
+    const findAndHandleSafes = async (
+        privateKey: `0x${string}`,
+        account: PrivateKeyAccount,
+        seedPhraseInput?: string
+    ) => {
+        setIsCheckingSafe(true);
+        try {
+            const safes = await findSafesFromSigner(account.address);
+
+            if (safes.length === 0) {
+                setShowNoSafeModal(true);
+                return;
+            }
+
+            if (safes.length === 1) {
+                setSelectedSafeAddress(safes[0]);
+                setPkAccount({ privateKey, account, seedPhrase: seedPhraseInput });
+                onClose?.();
+                return;
+            }
+
+            const tags = await loadSafeAvatarTags(privateKey, safes);
+            setSafeAvatarTags(tags);
+            setAvailableSafes(safes);
+            setPendingAccount({ privateKey, account, seedPhrase: seedPhraseInput });
+            setShowSelectSafeModal(true);
+        } finally {
+            setIsCheckingSafe(false);
+        }
     };
 
     const handleImportFromLocalStorage = async () => {
@@ -33,18 +96,7 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
             const privateKey = storedKey.startsWith('0x') ? storedKey : `0x${storedKey}`;
             const account = privateKeyToAccount(privateKey as `0x${string}`);
             console.log('EOA Address derived from localStorage key:', account.address);
-
-            setIsCheckingSafe(true);
-            const safeAddress = await findSafeFromSigner(account.address);
-            setIsCheckingSafe(false);
-
-            if (!safeAddress) {
-                setShowNoSafeModal(true);
-                return;
-            }
-
-            setPkAccount({ privateKey, account });
-            onClose?.();
+            await findAndHandleSafes(privateKey as `0x${string}`, account);
         } catch (error) {
             setIsCheckingSafe(false);
             toast.error('Error reading key from localStorage. Please enter your seed phrase manually.');
@@ -62,12 +114,28 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
             const keyFromMnemonic = mnemonicToEntropy(seedPhrase);
             const account = privateKeyToAccount(`0x${keyFromMnemonic}` as `0x${string}`);
             console.log('EOA Address derived from seed phrase:', account.address);
-            setPkAccount({privateKey: `0x${keyFromMnemonic}`, account: account, seedPhrase: seedPhrase});
-
-            onClose?.();
+            await findAndHandleSafes(`0x${keyFromMnemonic}`, account, seedPhrase);
         } catch (error) {
             toast.error('Error processing seed phrase. Please try again.');
         }
+    };
+
+    const handleSafeSelection = (safeAddress: Address) => {
+        if (!pendingAccount) {
+            return;
+        }
+
+        setSelectedSafeAddress(safeAddress);
+        setPkAccount({
+            privateKey: pendingAccount.privateKey,
+            account: pendingAccount.account,
+            seedPhrase: pendingAccount.seedPhrase,
+        });
+        setShowSelectSafeModal(false);
+        setPendingAccount(null);
+        setAvailableSafes([]);
+        setSafeAvatarTags({});
+        onClose?.();
     };
 
     return (
@@ -160,23 +228,69 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
                                 <AlertTriangle size={28} className="text-warning" />
                             </div>
 
-                            <h3 className="text-lg font-bold">Local key not found</h3>
+                            <h3 className="text-lg font-bold">No Safe found</h3>
 
                             <p className="text-sm text-base-content/70">
-                                The key stored in your browser does not have a valid Circles account associated with it.
-                                Please use your <strong>seed phrase</strong> to import your account instead.
+                                No Safe was found for this signer address.
+                                Please verify your key phrase and try again.
                             </p>
 
                             <button
                                 onClick={() => setShowNoSafeModal(false)}
                                 className="btn btn-neutral btn-md w-full rounded-xl mt-2"
                             >
-                                Use Seed Phrase
+                                Close
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showSelectSafeModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-base-100 rounded-2xl shadow-xl max-w-2xl w-full p-6 relative">
+                        <button
+                            onClick={() => setShowSelectSafeModal(false)}
+                            className="btn btn-ghost btn-sm btn-circle absolute top-3 right-3"
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold">Select Account to migrate</h3>
+                            <p className="text-sm text-base-content/70">
+                                Multiple Safes were found for this signer. Choose the Safe you want to use for migration.
+                            </p>
+
+                            <div className="space-y-2 max-h-80 overflow-y-auto">
+                                {availableSafes.map((safe) => {
+                                    const safeTag = safeAvatarTags[safe.toLowerCase()];
+                                    return (
+                                    <div key={safe} className="flex items-center justify-between gap-3 rounded-xl border border-base-300 p-3">
+                                        <div className="min-w-0">
+                                            <span className="font-mono text-xs sm:text-sm break-all block">{safe}</span>
+                                            {safeTag && (
+                                                <span className={`badge badge-sm mt-1 ${getTagClass(safeTag)}`}>
+                                                    {safeTag}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <CopyButton text={safe} />
+                                            <button
+                                                onClick={() => handleSafeSelection(safe)}
+                                                className="btn btn-sm btn-neutral rounded-lg"
+                                            >
+                                                Use Safe
+                                            </button>
+                                        </div>
+                                    </div>
+                                )})}
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
         </div>
     );
-} 
+}
