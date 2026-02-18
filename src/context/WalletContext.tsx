@@ -1,17 +1,18 @@
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
+import { createContext, useContext, ReactNode, useEffect, useRef, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
 import { NETWORK_CONFIG } from '../constants/networks';
 import { NetworkConfig } from '../types/network';
 import { Address, PrivateKeyAccount } from 'viem';
 import { gnosis } from 'viem/chains';
-import {
-  SafeSdkBrowserContractRunner,
-  SafeSdkPrivateKeyContractRunner,
-} from '@circles-sdk/adapter-safe';
 import { JsonRpcProvider } from 'ethers';
-import { findSafeFromSigner } from '../utils/safeDerivation';
+import { findSafesFromSigner } from '../utils/safeDerivation';
 import { Sdk } from '@circles-sdk/sdk';
 import { BrowserProviderContractRunner, PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
+import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
+import {
+  GelatoSafeSdkBrowserContractRunner,
+  GelatoSafeSdkPrivateKeyContractRunner,
+} from '../utils/gelatoSafeRunner';
 
 interface WalletContextType {
   account: {
@@ -24,11 +25,15 @@ interface WalletContextType {
   isWrongNetwork: boolean;
   isMounted: boolean;
   safeAddress?: Address;
+  safeAddresses: Address[];
+  safeAvatarTags: Record<string, SafeAvatarTag>;
+  isLoadingSafeAvatarTags: boolean;
   eoaAddress?: Address;
   circlesSdkRunner?: Sdk;
   isLoadingSafe: boolean;
   seedPhrase?: string;
   setPkAccount: (account: { privateKey: string, account: PrivateKeyAccount, seedPhrase?: string } | undefined) => void;
+  setSelectedSafeAddress: (safeAddress: Address | undefined) => void;
   disconnect: () => void;
 }
 
@@ -39,13 +44,19 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const [pkAccount, setPkAccount] = useState<{ privateKey: string, account: PrivateKeyAccount, seedPhrase?: string } | undefined>(undefined);
   const [safeAddress, setSafeAddress] = useState<Address | undefined>(undefined);
+  const [safeAddresses, setSafeAddresses] = useState<Address[]>([]);
+  const [safeAvatarTags, setSafeAvatarTags] = useState<Record<string, SafeAvatarTag>>({});
+  const [isLoadingSafeAvatarTags, setIsLoadingSafeAvatarTags] = useState(false);
+  const [selectedSafeAddress, setSelectedSafeAddress] = useState<Address | undefined>(undefined);
   const [circlesSdkRunner, setCirclesSdkRunner] = useState<Sdk | undefined>(undefined);
   const [isLoadingSafe, setIsLoadingSafe] = useState(false);
   const wagmiAccount = useAccount();
+  const initRequestIdRef = useRef(0);
 
   const chainId = pkAccount ? gnosis.id : wagmiAccount?.chainId;
   const chainName = pkAccount ? gnosis.name : wagmiAccount?.chain?.name;
   const network = chainId ? NETWORK_CONFIG[chainId] : undefined;
+  const gelatoApiKey = (import.meta.env.VITE_GELATO_RELAY_API_KEY as string | undefined)?.trim() || undefined;
 
   const signerAddress = pkAccount?.account.address || wagmiAccount.address;
 
@@ -56,6 +67,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const disconnect = () => {
     setPkAccount(undefined);
     setSafeAddress(undefined);
+    setSafeAddresses([]);
+    setSafeAvatarTags({});
+    setIsLoadingSafeAvatarTags(false);
+    setSelectedSafeAddress(undefined);
     setCirclesSdkRunner(undefined);
     setIsLoadingSafe(false);
 
@@ -65,59 +80,131 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    const requestId = ++initRequestIdRef.current;
+    let isCancelled = false;
+    const isStale = () => isCancelled || requestId !== initRequestIdRef.current;
+
     const initializeSafeAndSdk = async () => {
       if (!signerAddress) {
+        if (isStale()) {
+          return;
+        }
         setSafeAddress(undefined);
+        setSafeAddresses([]);
+        setSafeAvatarTags({});
+        setIsLoadingSafeAvatarTags(false);
         setCirclesSdkRunner(undefined);
         setIsLoadingSafe(false);
         return;
       }
 
-      setIsLoadingSafe(true);
+      if (!isStale()) {
+        setIsLoadingSafe(true);
+        setIsLoadingSafeAvatarTags(true);
+      }
 
       try {
-        const safeAddress = await findSafeFromSigner(signerAddress);
-        console.log('Safe Address fetched:', safeAddress || 'No Safe found');
+        const safes = await findSafesFromSigner(signerAddress);
+        if (isStale()) {
+          return;
+        }
+        const dedupedSafes = Array.from(new Map(
+          safes.map((safe) => [safe.toLowerCase(), safe])
+        ).values());
+        const matchingSelectedSafe = selectedSafeAddress
+          ? dedupedSafes.find((safe) => safe.toLowerCase() === selectedSafeAddress.toLowerCase())
+          : undefined;
+        const nextSafeAddress = matchingSelectedSafe || dedupedSafes[0];
+
+        console.log('Safe addresses fetched:', dedupedSafes.length > 0 ? dedupedSafes : 'No Safes found');
         console.log('Signer EOA Address:', signerAddress);
 
-        setSafeAddress(safeAddress || undefined);
-        let runner;
+        if (!matchingSelectedSafe && nextSafeAddress && !isStale()) {
+          setSelectedSafeAddress(nextSafeAddress || undefined);
+        }
 
-        if (safeAddress) {
+        if (isStale()) {
+          return;
+        }
+
+        setSafeAddresses(dedupedSafes);
+        setSafeAddress(nextSafeAddress || undefined);
+        let runner;
+        let sdk: Sdk;
+
+        if (nextSafeAddress) {
 
           if (pkAccount) {
-            runner = new SafeSdkPrivateKeyContractRunner(pkAccount.privateKey, 'https://rpc.circlesubi.network');
-            await runner.init(safeAddress as `0x${string}`);
+            runner = new GelatoSafeSdkPrivateKeyContractRunner(
+              pkAccount.privateKey,
+              'https://rpc.circlesubi.network',
+              gelatoApiKey
+            );
+            await runner.init(nextSafeAddress as `0x${string}`);
+            if (isStale()) {
+              return;
+            }
           } else {
-            runner = new SafeSdkBrowserContractRunner();
-            await runner.init(safeAddress as `0x${string}`);
+            runner = new GelatoSafeSdkBrowserContractRunner(gelatoApiKey);
+            await runner.init(nextSafeAddress as `0x${string}`);
+            if (isStale()) {
+              return;
+            }
           }
-          let sdk = new Sdk(runner as any);
+          sdk = new Sdk(runner as any);
           setCirclesSdkRunner(sdk);
         } else {
           if (pkAccount) {
             const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
             runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
             await runner.init();
+            if (isStale()) {
+              return;
+            }
           } else {
             runner = new BrowserProviderContractRunner();
             await runner.init();
+            if (isStale()) {
+              return;
+            }
           }
-          let sdk = new Sdk(runner as any);
+          sdk = new Sdk(runner as any);
           setCirclesSdkRunner(sdk);
         }
 
+        if (dedupedSafes.length > 0) {
+          const tags = await fetchSafeAvatarTags(sdk, dedupedSafes);
+          if (isStale()) {
+            return;
+          }
+          setSafeAvatarTags(tags);
+        } else {
+          setSafeAvatarTags({});
+        }
+
       } catch (error) {
+        if (isStale()) {
+          return;
+        }
         console.error('Error finding Safe address or initializing SDK:', error);
         setSafeAddress(undefined);
+        setSafeAddresses([]);
+        setSafeAvatarTags({});
         setCirclesSdkRunner(undefined);
       } finally {
-        setIsLoadingSafe(false);
+        if (!isStale()) {
+          setIsLoadingSafe(false);
+          setIsLoadingSafeAvatarTags(false);
+        }
       }
     };
 
     initializeSafeAndSdk();
-  }, [signerAddress, pkAccount]);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [signerAddress, pkAccount, selectedSafeAddress]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -134,11 +221,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     isWrongNetwork: isMounted && isWrongNetwork,
     isMounted,
     safeAddress,
+    safeAddresses,
+    safeAvatarTags,
+    isLoadingSafeAvatarTags,
     eoaAddress: signerAddress,
     circlesSdkRunner,
     isLoadingSafe,
     seedPhrase: pkAccount?.seedPhrase,
     setPkAccount,
+    setSelectedSafeAddress,
     disconnect,
   };
 

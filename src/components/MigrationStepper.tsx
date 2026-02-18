@@ -1,16 +1,32 @@
+import { Fragment } from "react";
 import { MigrationState } from "../types/migration";
 import { Check } from "lucide-react";
 
 interface MigrationStepperProps {
     currentState: MigrationState;
+    needsInviter: boolean;
 }
 
-export function MigrationStepper({ currentState }: MigrationStepperProps) {
+export function MigrationStepper({ currentState, needsInviter }: MigrationStepperProps) {
+    const steps: { state: MigrationState; label: string }[] = needsInviter
+        ? [
+            { state: "ready-to-migrate", label: "Start" },
+            { state: "selecting-inviter", label: "Choose Inviter" },
+            { state: "create-profile", label: "Create Profile" },
+            { state: "execute-migration", label: "Execute" },
+        ]
+        : [
+            { state: "ready-to-migrate", label: "Start" },
+            { state: "create-profile", label: "Create Profile" },
+            { state: "execute-migration", label: "Execute" },
+        ];
+
     const getStepStatus = (stepState: MigrationState) => {
-        const stepOrder = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"];
+        const stepOrder = steps.map((step) => step.state);
         const currentIndex = stepOrder.indexOf(currentState);
         const stepIndex = stepOrder.indexOf(stepState);
 
+        if (stepIndex === -1) return "upcoming";
         if (stepIndex < currentIndex) return "completed";
         if (stepIndex === currentIndex) return "current";
         return "upcoming";
@@ -61,46 +77,19 @@ export function MigrationStepper({ currentState }: MigrationStepperProps) {
     return (
         <div className="w-full max-w-3xl mb-8 overflow-x-auto pb-4">
             <div className="flex items-center min-w-max px-2">
-                {/* Step 1 */}
-                <div className="flex flex-col items-center">
-                    {renderStepCircle("ready-to-migrate", 1)}
-                    <span className={`mt-3 text-sm whitespace-nowrap ${getStepLabelClass("ready-to-migrate")}`}>
-                        Start
-                    </span>
-                </div>
-
-                {/* Connector */}
-                <div className={`min-w-12 sm:min-w-16 flex-1 h-1 ${getConnectorClass("selecting-inviter")} mx-3 sm:mx-4 rounded-full`}></div>
-
-                {/* Step 2 */}
-                <div className="flex flex-col items-center">
-                    {renderStepCircle("selecting-inviter", 2)}
-                    <span className={`mt-3 text-sm whitespace-nowrap ${getStepLabelClass("selecting-inviter")}`}>
-                        Choose Inviter
-                    </span>
-                </div>
-
-                {/* Connector */}
-                <div className={`min-w-12 sm:min-w-16 flex-1 h-1 ${getConnectorClass("create-profile")} mx-3 sm:mx-4 rounded-full`}></div>
-
-                {/* Step 3 */}
-                <div className="flex flex-col items-center">
-                    {renderStepCircle("create-profile", 3)}
-                    <span className={`mt-3 text-sm whitespace-nowrap ${getStepLabelClass("create-profile")}`}>
-                        Create Profile
-                    </span>
-                </div>
-
-                {/* Connector */}
-                <div className={`min-w-12 sm:min-w-16 flex-1 h-1 ${getConnectorClass("execute-migration")} mx-3 sm:mx-4 rounded-full`}></div>
-
-                {/* Step 4 */}
-                <div className="flex flex-col items-center">
-                    {renderStepCircle("execute-migration", 4)}
-                    <span className={`mt-3 text-sm whitespace-nowrap ${getStepLabelClass("execute-migration")}`}>
-                        Execute
-                    </span>
-                </div>
+                {steps.map((step, index) => (
+                    <Fragment key={step.state}>
+                        <div className="flex flex-col items-center">
+                            {renderStepCircle(step.state, index + 1)}
+                            <span className={`mt-3 text-sm whitespace-nowrap ${getStepLabelClass(step.state)}`}>
+                                {step.label}
+                            </span>
+                        </div>
+                        {index < steps.length - 1 && (
+                            <div className={`min-w-12 sm:min-w-16 flex-1 h-1 ${getConnectorClass(steps[index + 1].state)} mx-3 sm:mx-4 rounded-full`}></div>
+                        )}
+                    </Fragment>
+                ))}
             </div>
         </div>
     );

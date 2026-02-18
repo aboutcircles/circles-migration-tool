@@ -2,10 +2,11 @@ import Navbar from "./components/NavBar";
 import { WrongNetwork } from "./components/WrongNetwork";
 import { useWallet } from "./context/WalletContext";
 import { Dashboard } from "./components/Dashboard";
+import { AccountLoading } from "./components/AccountLoading";
 
 
 function App() {
-	const { account, isWrongNetwork } = useWallet();
+	const { account, isWrongNetwork, isLoadingSafe } = useWallet();
 
 	if (isWrongNetwork) {
 		return <WrongNetwork />;
@@ -17,7 +18,12 @@ function App() {
 				<Navbar />
 				{/* Main content */}
 				<div className="px-4 py-8">
-					{account.isConnected && account.address ? (
+					{isLoadingSafe && !account.address ? (
+						<AccountLoading
+							title="Connecting your account"
+							description="Finding your Safe and preparing your migration workspace."
+						/>
+					) : account.isConnected && account.address ? (
 						<Dashboard address={account.address} />
 					) : (
 						<div className="mt-20 max-w-md mx-auto bg-white border border-base-300 p-8 rounded-2xl shadow-lg">
