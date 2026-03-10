@@ -4,7 +4,12 @@ import { AvatarWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
 import { validateHumanRegistrationWithInviter } from "../utils/invitationValidation";
-import { hasAnyMigratableV1Balances, isNoBalancesRpcError, migrateAvatarWithoutBalances } from "../utils/migrationFallback";
+import {
+    hasAnyMigratableV1Balances,
+    isNoBalancesRpcError,
+    migrate,
+    migrateAvatarWithoutBalances,
+} from "../utils/migrationFallback";
 
 type Ctx = {
     address: Address;
@@ -110,7 +115,8 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
                 }
 
                 try {
-                    await sdk.migrateAvatar(
+                    await migrate(
+                        sdk,
                         inviter,
                         address as `0x${string}`,
                         draftProfile,
