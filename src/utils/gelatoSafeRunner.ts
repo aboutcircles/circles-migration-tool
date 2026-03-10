@@ -137,6 +137,8 @@ abstract class GelatoSafeContractRunnerBase implements SdkContractRunner {
     });
   };
 
+  getSafe = (): Safe | undefined => this.safe;
+
   protected initializeRelayerClient(apiKey: string | undefined): void {
     if (!apiKey) {
       throw new Error("Missing VITE_GELATO_RELAY_API_KEY for sponsored transactions");

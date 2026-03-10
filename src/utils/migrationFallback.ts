@@ -1,6 +1,7 @@
 import { Sdk } from "@circles-sdk/sdk";
 import { Profile } from "@circles-sdk/profiles";
 import { Address, cidV0ToUint8Array } from "@circles-sdk/utils";
+import Safe from "@safe-global/protocol-kit";
 import { Contract, JsonRpcProvider, ZeroAddress } from "ethers";
 
 const V1_TOKEN_ABI = [
@@ -16,6 +17,9 @@ const MIGRATION_ABI = [
 ] as const;
 
 const MAX_TRUST_EXPIRY = BigInt("79228162514264337593543950335");
+const SAFE_FALLBACK_HANDLER_V1_3_0_L2 = "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4".toLowerCase() as Address;
+const SAFE_FALLBACK_HANDLER_V1_4_1 = "0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226".toLowerCase() as Address;
+const VALID_FALLBACK_HANDLERS: ReadonlySet<Address> = new Set([SAFE_FALLBACK_HANDLER_V1_3_0_L2, SAFE_FALLBACK_HANDLER_V1_4_1]);
 
 type BatchTransaction = {
   to: string;
@@ -26,6 +30,10 @@ type BatchTransaction = {
 type BatchRunner = {
   addTransaction: (tx: BatchTransaction) => void;
   run: () => Promise<unknown>;
+};
+
+type SafeAwareContractRunner = {
+  getSafe?: () => Safe | undefined;
 };
 
 function getErrorMessage(error: unknown): string {
@@ -103,6 +111,30 @@ function createBatchRunner(sdk: Sdk): BatchRunner {
   }
 
   return contractRunner.sendBatchTransaction();
+}
+
+async function addSafeFallbackHandlerTransactionIfNeeded(
+  sdk: Sdk,
+  batch: BatchRunner
+): Promise<void> {
+  const contractRunner = sdk.contractRunner as SafeAwareContractRunner;
+  const safe = contractRunner.getSafe?.();
+
+  if (!safe) {
+    return;
+  }
+
+  const currentFallbackHandler = (await safe.getFallbackHandler()).toLowerCase() as Address;
+  if (VALID_FALLBACK_HANDLERS.has(currentFallbackHandler)) {
+    return;
+  }
+
+  const safeTx = await safe.createEnableFallbackHandlerTx(SAFE_FALLBACK_HANDLER_V1_4_1);
+  batch.addTransaction({
+    to: safeTx.data.to,
+    data: safeTx.data.data,
+    value: BigInt(safeTx.data.value),
+  });
 }
 
 async function addV1StopTransactionsIfNeeded(
@@ -304,6 +336,7 @@ async function runManualMigration(
   inviter = inviter.toLowerCase() as Address;
 
   const batch = createBatchRunner(sdk);
+  await addSafeFallbackHandlerTransactionIfNeeded(sdk, batch);
   await addRegistrationTransactionsIfNeeded(sdk, batch, avatar, inviter, profile);
 
   if (!options.skipBalanceMigration) {
