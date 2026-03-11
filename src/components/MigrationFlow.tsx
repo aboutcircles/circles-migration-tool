@@ -4,7 +4,7 @@ import { Profile } from "@circles-sdk/profiles";
 import { TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
 import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CreateProfile } from "./CreateProfile";
 import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
@@ -50,6 +50,7 @@ export function MigrationFlow({
     const [profileErrors, setProfileErrors] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [migrateTrustRelations, setMigrateTrustRelations] = useState(false);
+    const [wasOrganizationMigration, setWasOrganizationMigration] = useState(isV1Organization);
 
     const migratableTrustRelations = Array.from(
         new Set(
@@ -81,6 +82,20 @@ export function MigrationFlow({
     const step = STEP_CONFIG[state];
     const canProceed = step.guard ? step.guard(ctx) : true;
     const isLink = Boolean(step.href);
+    const circlesAppUrl = "https://app.aboutcircles.com/";
+
+    useEffect(() => {
+        if (isV1Organization) {
+            setWasOrganizationMigration(true);
+        }
+    }, [isV1Organization]);
+
+    const primaryHref = state === "migrated" && wasOrganizationMigration
+        ? circlesAppUrl
+        : step.href;
+    const primaryCta = state === "migrated" && wasOrganizationMigration
+        ? "Visit Circles App"
+        : step.cta;
 
     const handlePrimary = async () => {
         if (migrationBlockReason) {
@@ -158,12 +173,12 @@ export function MigrationFlow({
                 <div className="flex flex-col items-center space-y-3 mt-8">
                     {isLink ? (
                         <a
-                            href={step.href}
+                            href={primaryHref}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all w-full sm:w-auto min-w-[200px]"
                         >
-                            {step.cta}
+                            {primaryCta}
                         </a>
                     ) : (
                         <button
@@ -176,7 +191,7 @@ export function MigrationFlow({
                                 !!migrationBlockReason
                             }
                         >
-                            {isProcessing ? "Processing..." : step.cta}
+                            {isProcessing ? "Processing..." : primaryCta}
                         </button>
                     )}
 
