@@ -3,6 +3,7 @@ import { Profile } from "@circles-sdk/profiles";
 import { Address, cidV0ToUint8Array } from "@circles-sdk/utils";
 import Safe from "@safe-global/protocol-kit";
 import { Contract, JsonRpcProvider, ZeroAddress } from "ethers";
+import { addSafeFallbackHandlerTransactionIfNeeded as addSafeFallbackHandlerTxIfNeeded } from "./safeFallbackHandler";
 
 const V1_TOKEN_ABI = [
   "function stopped() view returns (bool)",
@@ -10,16 +11,19 @@ const V1_TOKEN_ABI = [
   "function stop()",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function increaseAllowance(address spender, uint256 addedValue)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function balanceOf(address account) view returns (uint256)",
 ] as const;
 
 const MIGRATION_ABI = [
   "function migrate(address[] _avatars, uint256[] _amounts)",
 ] as const;
 
+const NAME_REGISTRY_ABI = [
+  "function updateMetadataDigest(bytes32 _metadataDigest)",
+] as const;
+
 const MAX_TRUST_EXPIRY = BigInt("79228162514264337593543950335");
-const SAFE_FALLBACK_HANDLER_V1_3_0_L2 = "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4".toLowerCase() as Address;
-const SAFE_FALLBACK_HANDLER_V1_4_1 = "0x75cf11467937ce3F2f357CE24ffc3DBF8fD5c226".toLowerCase() as Address;
-const VALID_FALLBACK_HANDLERS: ReadonlySet<Address> = new Set([SAFE_FALLBACK_HANDLER_V1_3_0_L2, SAFE_FALLBACK_HANDLER_V1_4_1]);
 
 type BatchTransaction = {
   to: string;
@@ -101,6 +105,26 @@ async function createMetadataDigest(sdk: Sdk, profile: Profile): Promise<Uint8Ar
   return cidV0ToUint8Array(profileCid);
 }
 
+async function isAlreadyRegisteredOnV2(
+  sdk: Sdk,
+  avatar: Address,
+  avatarType: string
+): Promise<boolean> {
+  if (!sdk.v2Hub) {
+    return false;
+  }
+
+  if (avatarType === "CrcV1_Signup") {
+    return sdk.v2Hub.isHuman(avatar);
+  }
+
+  if (avatarType === "CrcV1_OrganizationSignup") {
+    return sdk.v2Hub.isOrganization(avatar);
+  }
+
+  return false;
+}
+
 function createBatchRunner(sdk: Sdk): BatchRunner {
   const contractRunner = sdk.contractRunner as {
     sendBatchTransaction?: () => BatchRunner;
@@ -124,17 +148,7 @@ async function addSafeFallbackHandlerTransactionIfNeeded(
     return;
   }
 
-  const currentFallbackHandler = (await safe.getFallbackHandler()).toLowerCase() as Address;
-  if (VALID_FALLBACK_HANDLERS.has(currentFallbackHandler)) {
-    return;
-  }
-
-  const safeTx = await safe.createEnableFallbackHandlerTx(SAFE_FALLBACK_HANDLER_V1_4_1);
-  batch.addTransaction({
-    to: safeTx.data.to,
-    data: safeTx.data.data,
-    value: BigInt(safeTx.data.value),
-  });
+  await addSafeFallbackHandlerTxIfNeeded(safe, batch);
 }
 
 async function addV1StopTransactionsIfNeeded(
@@ -166,13 +180,43 @@ async function addV1StopTransactionsIfNeeded(
   });
 }
 
+async function shouldAddIssuanceCalculationTransaction(
+  sdk: Sdk,
+  avatar: Address,
+  avatarVersion: number
+): Promise<boolean> {
+  if (avatarVersion === 1) {
+    return true;
+  }
+
+  if (!sdk.v2Hub || !sdk.circlesConfig.v2HubAddress) {
+    return false;
+  }
+
+  const provider = new JsonRpcProvider(sdk.circlesConfig.circlesRpcUrl);
+  const data = sdk.v2Hub.interface.encodeFunctionData("calculateIssuanceWithCheck", [avatar]);
+
+  try {
+    await provider.call({
+      from: avatar,
+      to: sdk.circlesConfig.v2HubAddress,
+      data,
+    });
+    return true;
+  } catch (error) {
+    console.warn("Skipping calculateIssuanceWithCheck because it reverts for avatar:", avatar, error);
+    return false;
+  }
+}
+
 async function addRegistrationTransactionsIfNeeded(
   sdk: Sdk,
   batch: BatchRunner,
   avatar: Address,
   inviter: Address,
-  profile: Profile
-): Promise<void> {
+  profile: Profile,
+  metadataDigest: Uint8Array
+): Promise<boolean> {
   if (!sdk.v2Hub || !sdk.circlesConfig.v2HubAddress) {
     throw new Error("V2 hub not available");
   }
@@ -187,11 +231,16 @@ async function addRegistrationTransactionsIfNeeded(
 
   await addV1StopTransactionsIfNeeded(sdk, batch, avatarInfo.v1Token ?? undefined);
 
-  if (avatarInfo.version === 1) {
-    const metadataDigest = await createMetadataDigest(sdk, profile);
+  const isRegisteredOnV2 = avatarInfo.version === 2
+    ? true
+    : await isAlreadyRegisteredOnV2(sdk, avatar, avatarInfo.type);
+  const wasAlreadyRegisteredOnV2AtStart = isRegisteredOnV2;
 
+  if (!isRegisteredOnV2 && avatarInfo.version === 1) {
     if (avatarInfo.type === "CrcV1_Signup") {
-      if (inviter === ZeroAddress && !(await sdk.canSelfMigrate({ ...avatarInfo }))) {
+      const canSelfMigrate = await sdk.canSelfMigrate({ ...avatarInfo });
+
+      if (inviter === ZeroAddress && !canSelfMigrate) {
         throw new Error(
           `Self registration not allowed for avatar ${avatar} because it did not stop minting in v1 during the migration period`
         );
@@ -213,7 +262,12 @@ async function addRegistrationTransactionsIfNeeded(
     }
   }
 
-  if (avatarInfo.isHuman) {
+  const isMigratingFromV1 = avatarInfo.hasV1;
+  const shouldAddIssuance = isMigratingFromV1
+    ? true
+    : await shouldAddIssuanceCalculationTransaction(sdk, avatar, isRegisteredOnV2 ? 2 : avatarInfo.version);
+
+  if (avatarInfo.isHuman && shouldAddIssuance) {
     batch.addTransaction({
       to: sdk.circlesConfig.v2HubAddress,
       data: sdk.v2Hub.interface.encodeFunctionData("calculateIssuanceWithCheck", [avatar]),
@@ -221,6 +275,26 @@ async function addRegistrationTransactionsIfNeeded(
     });
   }
 
+  return wasAlreadyRegisteredOnV2AtStart;
+}
+
+function addMetadataUpdateTransaction(
+  sdk: Sdk,
+  batch: BatchRunner,
+  metadataDigest: Uint8Array
+): void {
+  if (!sdk.circlesConfig.nameRegistryAddress) {
+    throw new Error("Name registry address not set");
+  }
+
+  const provider = new JsonRpcProvider(sdk.circlesConfig.circlesRpcUrl);
+  const nameRegistry = new Contract(sdk.circlesConfig.nameRegistryAddress, NAME_REGISTRY_ABI, provider);
+
+  batch.addTransaction({
+    to: sdk.circlesConfig.nameRegistryAddress,
+    data: nameRegistry.interface.encodeFunctionData("updateMetadataDigest", [metadataDigest]),
+    value: 0n,
+  });
 }
 
 async function addEligibleV1BalanceMigrationTransactions(
@@ -259,6 +333,20 @@ async function addEligibleV1BalanceMigrationTransactions(
   }
 
   const provider = new JsonRpcProvider(sdk.circlesConfig.circlesRpcUrl);
+
+  const migrateAmounts = await Promise.all(
+    tokensToMigrate.map(async (tokenBalance) => {
+      const isOwnToken = tokenBalance.tokenOwner.toLowerCase() === avatarLower;
+      if (isOwnToken) {
+        const token = new Contract(tokenBalance.tokenAddress, V1_TOKEN_ABI, provider);
+        return (await token.balanceOf(avatar)) as bigint;
+      }
+      return BigInt(tokenBalance.attoCrc);
+    })
+  );
+
+  const MAX_UINT256 = (1n << 256n) - 1n;
+
   const allowances = await Promise.all(
     tokensToMigrate.map(async (tokenBalance) => {
       const token = new Contract(tokenBalance.tokenAddress, V1_TOKEN_ABI, provider);
@@ -268,22 +356,36 @@ async function addEligibleV1BalanceMigrationTransactions(
 
   for (let index = 0; index < tokensToMigrate.length; index += 1) {
     const tokenBalance = tokensToMigrate[index];
-    const balance = BigInt(tokenBalance.attoCrc);
+    const isOwnToken = tokenBalance.tokenOwner.toLowerCase() === avatarLower;
+    const amount = migrateAmounts[index];
     const allowance = allowances[index];
 
-    if (allowance >= balance) {
-      continue;
+    if (isOwnToken) {
+      if (allowance < MAX_UINT256) {
+        const token = new Contract(tokenBalance.tokenAddress, V1_TOKEN_ABI, provider);
+        batch.addTransaction({
+          to: tokenBalance.tokenAddress,
+          data: token.interface.encodeFunctionData("approve", [
+            sdk.circlesConfig.migrationAddress,
+            MAX_UINT256,
+          ]),
+          value: 0n,
+        });
+      }
+    } else {
+      if (allowance >= amount) {
+        continue;
+      }
+      const token = new Contract(tokenBalance.tokenAddress, V1_TOKEN_ABI, provider);
+      batch.addTransaction({
+        to: tokenBalance.tokenAddress,
+        data: token.interface.encodeFunctionData("increaseAllowance", [
+          sdk.circlesConfig.migrationAddress,
+          amount - allowance,
+        ]),
+        value: 0n,
+      });
     }
-
-    const token = new Contract(tokenBalance.tokenAddress, V1_TOKEN_ABI, provider);
-    batch.addTransaction({
-      to: tokenBalance.tokenAddress,
-      data: token.interface.encodeFunctionData("increaseAllowance", [
-        sdk.circlesConfig.migrationAddress,
-        balance - allowance,
-      ]),
-      value: 0n,
-    });
   }
 
   const migrationContract = new Contract(
@@ -295,7 +397,7 @@ async function addEligibleV1BalanceMigrationTransactions(
     to: sdk.circlesConfig.migrationAddress,
     data: migrationContract.interface.encodeFunctionData("migrate", [
       tokensToMigrate.map((balance) => balance.tokenOwner),
-      tokensToMigrate.map((balance) => BigInt(balance.attoCrc)),
+      migrateAmounts,
     ]),
     value: 0n,
   });
@@ -336,14 +438,25 @@ async function runManualMigration(
   inviter = inviter.toLowerCase() as Address;
 
   const batch = createBatchRunner(sdk);
+  const metadataDigest = await createMetadataDigest(sdk, profile);
   await addSafeFallbackHandlerTransactionIfNeeded(sdk, batch);
-  await addRegistrationTransactionsIfNeeded(sdk, batch, avatar, inviter, profile);
+  const wasAlreadyRegisteredOnV2AtStart = await addRegistrationTransactionsIfNeeded(
+    sdk,
+    batch,
+    avatar,
+    inviter,
+    profile,
+    metadataDigest
+  );
 
   if (!options.skipBalanceMigration) {
     await addEligibleV1BalanceMigrationTransactions(sdk, batch, avatar);
   }
 
   addTrustTransactions(sdk, batch, trustRelations);
+  if (wasAlreadyRegisteredOnV2AtStart) {
+    addMetadataUpdateTransaction(sdk, batch, metadataDigest);
+  }
   await batch.run();
 }
 

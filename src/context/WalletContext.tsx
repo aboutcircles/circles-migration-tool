@@ -1,13 +1,13 @@
 import { createContext, useContext, ReactNode, useEffect, useRef, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import { NETWORK_CONFIG } from '../constants/networks';
-import { NetworkConfig } from '../types/network';
 import { Address, PrivateKeyAccount } from 'viem';
+import type { Chain } from 'viem';
 import { gnosis } from 'viem/chains';
 import { JsonRpcProvider } from 'ethers';
 import { findSafesFromSigner } from '../utils/safeDerivation';
 import { Sdk } from '@circles-sdk/sdk';
 import { BrowserProviderContractRunner, PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
+import { circlesConfig as aboutCirclesConfig } from '@aboutcircles/sdk-utils';
 import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
 import {
   GelatoSafeSdkBrowserContractRunner,
@@ -21,7 +21,9 @@ interface WalletContextType {
   };
   chainId?: number;
   chainName?: string;
-  network?: NetworkConfig;
+  network?: Chain;
+  circlesRpcUrl?: string;
+  invitationModuleAddress?: Address;
   isWrongNetwork: boolean;
   isMounted: boolean;
   safeAddress?: Address;
@@ -38,6 +40,8 @@ interface WalletContextType {
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
+const circlesRpcUrl = 'https://rpc.circlesubi.network';
+const defaultInvitationModuleAddress = aboutCirclesConfig[gnosis.id].invitationModuleAddress as Address;
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const { disconnect: disconnectWagmiAccount } = useDisconnect();
@@ -55,8 +59,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const chainId = pkAccount ? gnosis.id : wagmiAccount?.chainId;
   const chainName = pkAccount ? gnosis.name : wagmiAccount?.chain?.name;
-  const network = chainId ? NETWORK_CONFIG[chainId] : undefined;
-  const gelatoApiKey = (import.meta.env.VITE_GELATO_RELAY_API_KEY as string | undefined)?.trim() || undefined;
+  const network = chainId === gnosis.id ? gnosis : undefined;
+  const activeInvitationModuleAddress = chainId === gnosis.id ? defaultInvitationModuleAddress : undefined;
 
   const signerAddress = pkAccount?.account.address || wagmiAccount.address;
 
@@ -137,15 +141,14 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           if (pkAccount) {
             runner = new GelatoSafeSdkPrivateKeyContractRunner(
               pkAccount.privateKey,
-              'https://rpc.circlesubi.network',
-              gelatoApiKey
+              circlesRpcUrl,
             );
             await runner.init(nextSafeAddress as `0x${string}`);
             if (isStale()) {
               return;
             }
           } else {
-            runner = new GelatoSafeSdkBrowserContractRunner(gelatoApiKey);
+            runner = new GelatoSafeSdkBrowserContractRunner();
             await runner.init(nextSafeAddress as `0x${string}`);
             if (isStale()) {
               return;
@@ -155,7 +158,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           setCirclesSdkRunner(sdk);
         } else {
           if (pkAccount) {
-            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
+            const rpcProvider = new JsonRpcProvider(circlesRpcUrl);
             runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
             await runner.init();
             if (isStale()) {
@@ -204,7 +207,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     return () => {
       isCancelled = true;
     };
-  }, [signerAddress, pkAccount, selectedSafeAddress]);
+  }, [circlesRpcUrl, signerAddress, pkAccount, selectedSafeAddress]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -218,6 +221,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     chainId,
     chainName,
     network,
+    circlesRpcUrl,
+    invitationModuleAddress: activeInvitationModuleAddress,
     isWrongNetwork: isMounted && isWrongNetwork,
     isMounted,
     safeAddress,

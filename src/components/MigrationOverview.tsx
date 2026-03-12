@@ -1,12 +1,8 @@
 import { Profile } from "@circles-sdk/profiles";
-import { AvatarWithProfile } from "../context/CirclesContext";
-
 interface MigrationOverviewProps {
     draftProfile: Profile;
     needsInviter: boolean;
     isV1Organization: boolean;
-    selectedInviter: `0x${string}` | null;
-    invitationsWithProfiles: AvatarWithProfile[];
     migratableTrustRelationCount: number;
     migrateTrustRelations: boolean;
     onMigrateTrustRelationsChange: (enabled: boolean) => void;
@@ -16,16 +12,10 @@ export function MigrationOverview({
     draftProfile,
     needsInviter,
     isV1Organization,
-    selectedInviter,
-    invitationsWithProfiles,
     migratableTrustRelationCount,
     migrateTrustRelations,
     onMigrateTrustRelationsChange,
 }: MigrationOverviewProps) {
-    const inviterWithProfile = invitationsWithProfiles.find(
-        (invitation) => invitation.avatar.avatar === selectedInviter
-    );
-
     return (
         <div className="space-y-6">
             <h3 className="text-lg font-semibold text-primary mb-4">Migration Summary</h3>
@@ -43,7 +33,7 @@ export function MigrationOverview({
                     </span>
                     <span className="font-bold text-primary text-right">
                         {needsInviter
-                            ? inviterWithProfile?.profile.name || "No name"
+                            ? "Sponsored invitation"
                             : isV1Organization
                                 ? "Organization migration"
                                 : "Self migration"}
@@ -64,6 +54,11 @@ export function MigrationOverview({
                             Your profile will be created and your avatar will be migrated to Circles V2.
                             This action is irreversible and will be recorded on the blockchain.
                         </div>
+                        {needsInviter && (
+                            <div className="text-base-content/80 leading-relaxed mt-3">
+                                An invitation will be created automatically as part of the migration.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

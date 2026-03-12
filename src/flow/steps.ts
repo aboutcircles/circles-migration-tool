@@ -1,6 +1,5 @@
 import { Address } from "viem";
 import { Sdk } from "@circles-sdk/sdk";
-import { AvatarWithProfile } from "../context/CirclesContext";
 import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
 import { validateHumanRegistrationWithInviter } from "../utils/invitationValidation";
@@ -10,16 +9,19 @@ import {
     migrate,
     migrateAvatarWithoutBalances,
 } from "../utils/migrationFallback";
+import { createSponsoredInvite } from "../utils/sponsorInvitation";
+import { enableInvitationModule } from "../utils/invitationModule";
 
 type Ctx = {
     address: Address;
     sdk: Sdk;
-    invitationsWithProfiles: AvatarWithProfile[];
     needsInviter: boolean;
-    selectedInviter: `0x${string}` | null;
+    requiresInvitationModuleEnablement: boolean;
+    invitationModuleAddress?: Address;
     draftProfile: Profile;
     profileErrors: string[];
     selectedTrustRelations: Address[];
+    onInvitationModuleEnabled: () => void;
 };
 
 type Step = {
@@ -35,7 +37,6 @@ type Step = {
 
 const GNOSIS_URL = "https://app.gnosis.io/welcome/import";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
 export const STEP_CONFIG: Record<MigrationState, Step> = {
     "not-registered": {
         id: "not-registered",
@@ -44,28 +45,23 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         cta: "Visit Gnosis app",
         href: GNOSIS_URL,
     },
-    "selecting-inviter": {
-        id: "selecting-inviter",
-        title: "Choose an Inviter",
-        description: "Choose an inviter to invite you to Circles",
-        cta: "Continue",
-        guard: ({ selectedInviter }) => !!selectedInviter,
-        next: "create-profile",
-    },
     "create-profile": {
         id: "create-profile",
         title: "Create Profile",
         description: "Create your new Circles profile",
         cta: "Review",
         guard: ({ profileErrors }) => profileErrors.length === 0,
-        next: "execute-migration",
+        next: (ctx) =>
+            ctx.requiresInvitationModuleEnablement
+                ? "enable-invitation-module"
+                : "execute-migration",
     },
     "ready-to-migrate": {
         id: "ready-to-migrate",
         title: "Migrate to V2",
         description: "Your v1 account is ready to be migrated to v2",
         cta: "Start migration",
-        next: ({ needsInviter }) => needsInviter ? "selecting-inviter" : "create-profile",
+        next: "create-profile",
     },
     "registered-v2": {
         id: "registered-v2",
@@ -81,26 +77,55 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         cta: "Visit Gnosis app",
         href: GNOSIS_URL,
     },
+    "enable-invitation-module": {
+        id: "enable-invitation-module",
+        title: "Enable Invitation Module",
+        description: "Enable the invitation module on your Safe to receive a sponsored invite",
+        cta: "Enable invitation module",
+        onNext: async ({
+            sdk,
+            invitationModuleAddress,
+            onInvitationModuleEnabled,
+        }) => {
+            if (!invitationModuleAddress) {
+                throw new Error("Invitation module address is not configured for this network.");
+            }
+
+            await enableInvitationModule(sdk, invitationModuleAddress);
+            onInvitationModuleEnabled();
+        },
+        next: "execute-migration",
+    },
     "execute-migration": {
         id: "execute-migration",
         title: "Complete Migration",
         description: "Review your profile and complete the migration",
         cta: "Complete profile migration",
-        guard: ({ needsInviter, invitationsWithProfiles, selectedInviter }) =>
-            !needsInviter || (invitationsWithProfiles.length > 0 && !!selectedInviter),
-        onNext: async ({ sdk, address, needsInviter, selectedInviter, draftProfile, selectedTrustRelations }) => {
+        guard: ({ draftProfile }) => {
+            return Boolean(draftProfile.name && draftProfile.name.trim().length > 0);
+        },
+        onNext: async ({
+            sdk,
+            address,
+            needsInviter,
+            draftProfile,
+            selectedTrustRelations,
+        }) => {
+            if (!draftProfile.name || draftProfile.name.trim().length === 0) {
+                throw new Error("Profile name is required. Please go back and fill in your profile.");
+            }
             try {
                 let inviter: `0x${string}`;
+                let isAlreadyRegisteredAfterInvite = false;
                 if (needsInviter) {
-                    if (!selectedInviter) {
-                        throw new Error("No inviter selected for migration");
-                    }
-                    inviter = selectedInviter;
+                    const sponsoredInvite = await createSponsoredInvite(address as `0x${string}`);
+                    inviter = sponsoredInvite.inviter as `0x${string}`;
+                    isAlreadyRegisteredAfterInvite = sponsoredInvite.registered;
                 } else {
                     inviter = ZERO_ADDRESS;
                 }
 
-                if (needsInviter) {
+                if (needsInviter && inviter.toLowerCase() !== address.toLowerCase() && !isAlreadyRegisteredAfterInvite) {
                     const validationResult = await validateHumanRegistrationWithInviter(
                         sdk,
                         address,

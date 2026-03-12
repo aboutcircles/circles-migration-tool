@@ -4,22 +4,24 @@ import { Check } from "lucide-react";
 
 interface MigrationStepperProps {
     currentState: MigrationState;
-    needsInviter: boolean;
+    showModuleStep: boolean;
 }
 
-export function MigrationStepper({ currentState, needsInviter }: MigrationStepperProps) {
-    const steps: { state: MigrationState; label: string }[] = needsInviter
-        ? [
-            { state: "ready-to-migrate", label: "Start" },
-            { state: "selecting-inviter", label: "Choose Inviter" },
-            { state: "create-profile", label: "Create Profile" },
-            { state: "execute-migration", label: "Execute" },
-        ]
-        : [
-            { state: "ready-to-migrate", label: "Start" },
-            { state: "create-profile", label: "Create Profile" },
-            { state: "execute-migration", label: "Execute" },
-        ];
+const defaultSteps: { state: MigrationState; label: string }[] = [
+    { state: "ready-to-migrate", label: "Start" },
+    { state: "create-profile", label: "Create Profile" },
+    { state: "execute-migration", label: "Execute" },
+];
+
+const moduleSteps: { state: MigrationState; label: string }[] = [
+    { state: "ready-to-migrate", label: "Start" },
+    { state: "create-profile", label: "Create Profile" },
+    { state: "enable-invitation-module", label: "Enable Module" },
+    { state: "execute-migration", label: "Execute" },
+];
+
+export function MigrationStepper({ currentState, showModuleStep }: MigrationStepperProps) {
+    const steps = showModuleStep ? moduleSteps : defaultSteps;
 
     const getStepStatus = (stepState: MigrationState) => {
         const stepOrder = steps.map((step) => step.state);
@@ -34,7 +36,7 @@ export function MigrationStepper({ currentState, needsInviter }: MigrationSteppe
 
     const renderStepCircle = (stepState: MigrationState, stepNumber: number) => {
         const status = getStepStatus(stepState);
-        
+
         if (status === "completed") {
             return (
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold bg-primary text-white shadow-md">
@@ -42,7 +44,7 @@ export function MigrationStepper({ currentState, needsInviter }: MigrationSteppe
                 </div>
             );
         }
-        
+
         if (status === "current") {
             return (
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold bg-accent text-white shadow-md ring-4 ring-accent/20">
@@ -50,7 +52,7 @@ export function MigrationStepper({ currentState, needsInviter }: MigrationSteppe
                 </div>
             );
         }
-        
+
         return (
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium bg-base-200 text-base-content/40">
                 {stepNumber}

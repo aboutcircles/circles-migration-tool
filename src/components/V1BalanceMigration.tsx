@@ -4,6 +4,7 @@ import { TokenBalanceRow } from "@circles-sdk/data";
 import { Sdk } from "@circles-sdk/sdk";
 import { truncateAddress } from "../utils/address";
 import toast from "react-hot-toast";
+import { MIN_DUST_THRESHOLD } from "../utils/constants";
 
 interface V1BalanceMigrationProps {
     address: Address;
@@ -31,7 +32,7 @@ export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, 
 
     const checkEligibility = useCallback(async () => {
         const v1Balances = circlesBalance.filter(
-            (b) => b.version === 1 && BigInt(b.attoCrc) > 0n
+            (b) => b.version === 1 && BigInt(b.attoCrc) > MIN_DUST_THRESHOLD
         );
 
         if (v1Balances.length === 0) {

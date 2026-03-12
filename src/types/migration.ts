@@ -1,19 +1,8 @@
-
-export type MigrationState = 
+export type MigrationState =
   | "not-registered"
   | "registered-v2"
   | "migrated"
-  | "ready-to-migrate" 
-  | "selecting-inviter"
+  | "ready-to-migrate"
   | "create-profile"
+  | "enable-invitation-module"
   | "execute-migration";
-
-
-export interface MigrationStatus {
-  title: string;
-  description: string;
-  actionTitle: string;
-  action: () => void;
-}
-
-export type MigrationStatusConfig = Record<MigrationState, MigrationStatus>;

@@ -2,7 +2,7 @@ import { ArrowUpRight, X } from "lucide-react";
 import { truncateAddress } from "../utils/address";
 import { CopyButton } from "./CopyButton";
 import { Address } from "viem";
-import { SafeAvatarTag } from "../utils/safeAvatarTags";
+import { SafeAvatarTag, getTagClass } from "../utils/safeAvatarTags";
 
 interface AccountViewProps {
     address: Address;
@@ -15,12 +15,6 @@ interface AccountViewProps {
     disconnect: () => void;
     onClose: () => void
 }
-
-const getTagClass = (tag: SafeAvatarTag): string => {
-    return tag.startsWith("v2")
-        ? "badge-success"
-        : "badge-warning";
-};
 
 export function AccountView({
     address,

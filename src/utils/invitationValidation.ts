@@ -80,17 +80,3 @@ export async function validateHumanRegistrationWithInviter(
     };
   }
 }
-
-export async function canRegisterHumanWithInviter(
-  sdk: Sdk,
-  avatarAddress: Address,
-  inviterAddress: Address
-): Promise<boolean> {
-  const result = await validateHumanRegistrationWithInviter(
-    sdk,
-    avatarAddress,
-    inviterAddress
-  );
-
-  return result.isValid;
-}

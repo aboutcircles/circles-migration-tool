@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc && tsc -p tsconfig.server.json && vite build",
     "preview": "vite preview",
-    "start": "serve -s dist"
+    "start": "node dist-server/server/index.js",
+    "start:static": "serve -s dist"
   },
   "dependencies": {
+    "@aboutcircles/sdk-invitations": "^0.1.24",
+    "@aboutcircles/sdk-utils": "^0.1.24",
     "@circles-sdk/adapter": "0.29.1",
     "@circles-sdk/adapter-ethers": "^0.29.1",
     "@circles-sdk/adapter-safe": "^0.29.1",
@@ -22,7 +26,9 @@
     "@tailwindcss/vite": "^4.1.12",
     "@tanstack/react-query": "5.45.1",
     "bip39": "^3.1.0",
+    "dotenv": "^17.3.1",
     "ethers": "^6.15.0",
+    "express": "^4.22.1",
     "lucide-react": "^0.542.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -33,6 +39,8 @@
     "wagmi": "latest"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.2.1",
@@ -40,6 +48,7 @@
     "buffer": "^6.0.3",
     "daisyui": "^5.0.54",
     "serve": "^14.2.5",
+    "tsx": "^4.20.5",
     "typescript": "^5.8.3",
     "vite": "^5.2.11"
   }

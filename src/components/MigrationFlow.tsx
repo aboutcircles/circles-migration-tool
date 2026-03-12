@@ -1,17 +1,14 @@
 import { Address } from "viem";
-import { ExternalLink } from "lucide-react";
 import { Profile } from "@circles-sdk/profiles";
 import { TokenBalanceRow, TrustRelationRow } from "@circles-sdk/data";
-import { GetInvited } from "./GetInvited";
 import { MigrationState } from "../types/migration";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CreateProfile } from "./CreateProfile";
 import { Sdk } from "@circles-sdk/sdk";
 import { STEP_CONFIG } from "../flow/steps";
 import toast from "react-hot-toast";
 import { CirclesOverview } from "./CirclesOverview";
 import { MigrationOverview } from "./MigrationOverview";
-import { AvatarWithProfile } from "../context/CirclesContext";
 import { TrustRelation } from "@circles-sdk/data";
 
 interface MigrationFlowProps {
@@ -22,12 +19,20 @@ interface MigrationFlowProps {
     circlesBalance: TokenBalanceRow[];
     trustConnections: TrustRelationRow[];
     state: MigrationState;
-    invitationsWithProfiles: AvatarWithProfile[];
     circlesSdkRunner: Sdk;
     needsInviter: boolean;
+    requiresInvitationModuleEnablement: boolean;
+    invitationModuleAddress?: Address;
+    onInvitationModuleEnabled: () => void;
     isV1Organization: boolean;
-    invitationValidationError: string | null;
+    wasOrganizationMigration: boolean;
     migrationBlockReason: string | null;
+    draftProfile: Profile;
+    setDraftProfile: (profile: Profile) => void;
+    profileErrors: string[];
+    setProfileErrors: (errors: string[]) => void;
+    migrateTrustRelations: boolean;
+    setMigrateTrustRelations: (enabled: boolean) => void;
 }
 
 export function MigrationFlow({
@@ -38,19 +43,22 @@ export function MigrationFlow({
     refreshData,
     circlesBalance,
     trustConnections,
-    invitationsWithProfiles,
     circlesSdkRunner,
     needsInviter,
+    requiresInvitationModuleEnablement,
+    invitationModuleAddress,
+    onInvitationModuleEnabled,
     isV1Organization,
-    invitationValidationError,
+    wasOrganizationMigration,
     migrationBlockReason,
+    draftProfile,
+    setDraftProfile,
+    profileErrors,
+    setProfileErrors,
+    migrateTrustRelations,
+    setMigrateTrustRelations,
 }: MigrationFlowProps) {
-    const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
-    const [draftProfile, setDraftProfile] = useState<Profile>({ name: "", description: "", previewImageUrl: "", imageUrl: "" });
-    const [profileErrors, setProfileErrors] = useState<string[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [migrateTrustRelations, setMigrateTrustRelations] = useState(false);
-    const [wasOrganizationMigration, setWasOrganizationMigration] = useState(isV1Organization);
 
     const migratableTrustRelations = Array.from(
         new Set(
@@ -71,24 +79,19 @@ export function MigrationFlow({
     const ctx = {
         address,
         sdk: circlesSdkRunner,
-        invitationsWithProfiles,
         needsInviter,
-        selectedInviter,
+        requiresInvitationModuleEnablement,
+        invitationModuleAddress,
         draftProfile,
         profileErrors,
         selectedTrustRelations,
+        onInvitationModuleEnabled,
     };
 
     const step = STEP_CONFIG[state];
     const canProceed = step.guard ? step.guard(ctx) : true;
     const isLink = Boolean(step.href);
     const circlesAppUrl = "https://app.aboutcircles.com/";
-
-    useEffect(() => {
-        if (isV1Organization) {
-            setWasOrganizationMigration(true);
-        }
-    }, [isV1Organization]);
 
     const primaryHref = state === "migrated" && wasOrganizationMigration
         ? circlesAppUrl
@@ -106,18 +109,28 @@ export function MigrationFlow({
         try {
             setIsProcessing(true);
             if (step.onNext) {
-                await toast.promise(step.onNext(ctx), {
-                    loading: "Migrating avatar…",
-                    success: "Migration complete!",
-                    error: (error) => error instanceof Error
-                        ? error.message
-                        : "Migration failed, please reach out to support on Discord",
-                });
+                const toastMessages = state === "enable-invitation-module"
+                    ? {
+                        loading: "Enabling invitation module…",
+                        success: "Invitation module enabled!",
+                        error: (error: unknown) => error instanceof Error
+                            ? error.message
+                            : "Failed to enable invitation module, please reach out to support on Discord",
+                    }
+                    : {
+                        loading: "Migrating avatar…",
+                        success: "Migration complete!",
+                        error: (error: unknown) => error instanceof Error
+                            ? error.message
+                            : "Migration failed, please reach out to support on Discord",
+                    };
+
+                await toast.promise(step.onNext(ctx), toastMessages);
 
                 try {
                     await refreshData();
                 } catch (refreshError) {
-                    console.warn("Migration succeeded but refresh failed:", refreshError);
+                    console.warn("Step succeeded but refresh failed:", refreshError);
                 }
             }
 
@@ -141,33 +154,34 @@ export function MigrationFlow({
 
             {/* Content */}
             <div className="flex flex-col w-full bg-white border border-base-300 sm:px-10 px-6 py-8 rounded-2xl shadow-lg">
-                {state === "selecting-inviter" && (
-                    <GetInvited
-                        invitations={invitationsWithProfiles}
-                        onInviterSelected={setSelectedInviter}
-                    />
-                )}
                 {state === "create-profile" && (
                     <CreateProfile profile={draftProfile}
                         onChange={setDraftProfile}
                         onValidityChange={setProfileErrors} />
                 )}
 
+                {state === "enable-invitation-module" && (
+                    <div className="text-center space-y-4">
+                        <p className="text-base-content/70">
+                            Your account requires a sponsored invitation to migrate. The invitation module
+                            must be enabled on your Safe before the invitation can be created.
+                        </p>
+                    </div>
+                )}
+
                 {state === "execute-migration" && (
-                    <MigrationOverview 
+                    <MigrationOverview
                         draftProfile={draftProfile}
                         needsInviter={needsInviter}
                         isV1Organization={isV1Organization}
-                        selectedInviter={selectedInviter}
-                        invitationsWithProfiles={invitationsWithProfiles}
                         migratableTrustRelationCount={migratableTrustRelations.length}
                         migrateTrustRelations={migrateTrustRelations}
                         onMigrateTrustRelationsChange={setMigrateTrustRelations}
                     />
                 )}
 
-                {state !== "selecting-inviter" && state !== "create-profile" && state !== "execute-migration" && (
-                    <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
+                {state !== "create-profile" && state !== "execute-migration" && state !== "enable-invitation-module" && (
+                    <CirclesOverview profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
                 )}
 
                 <div className="flex flex-col items-center space-y-3 mt-8">
@@ -184,14 +198,11 @@ export function MigrationFlow({
                         <button
                             onClick={() => handlePrimary()}
                             className="btn btn-neutral btn-lg rounded-xl shadow-md hover:shadow-lg transition-all w-full sm:w-auto min-w-[200px]"
-                            disabled={
-                                (state === "ready-to-migrate" && needsInviter && invitationsWithProfiles.length === 0) ||
-                                !canProceed ||
-                                isProcessing ||
-                                !!migrationBlockReason
-                            }
+                            disabled={!canProceed || isProcessing || !!migrationBlockReason}
                         >
-                            {isProcessing ? "Processing..." : primaryCta}
+                            {isProcessing
+                                ? "Processing..."
+                                : primaryCta}
                         </button>
                     )}
 
@@ -203,26 +214,8 @@ export function MigrationFlow({
 
                     {state === "ready-to-migrate" && needsInviter && (
                         <p className="text-sm text-base-content/70 text-center max-w-md">
-                            Self-migration is not available for this avatar. You need an invite from an existing Circles user to continue.
+                            An invitation will be created automatically as part of the migration process.
                         </p>
-                    )}
-
-                    {state === "ready-to-migrate" && needsInviter && invitationsWithProfiles.length === 0 && invitationValidationError && (
-                        <div className="alert alert-error rounded-xl w-full max-w-xl">
-                            <span>{invitationValidationError}</span>
-                        </div>
-                    )}
-
-                    {state === "ready-to-migrate" && needsInviter && invitationsWithProfiles.length === 0 && (
-                        <a
-                            href="https://discord.com/invite/aboutcircles"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center space-x-1 text-sm text-primary hover:text-secondary transition-colors font-medium"
-                        >
-                            <span>Get invited to Circles</span>
-                            <ExternalLink className="w-4 h-4" />
-                        </a>
                     )}
                 </div>
             </div>

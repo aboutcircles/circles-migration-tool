@@ -11,6 +11,10 @@ type AvatarInfoLike = {
   isHuman?: boolean | null;
 };
 
+export function getTagClass(tag: SafeAvatarTag): string {
+  return tag.startsWith("v2") ? "badge-success" : "badge-warning";
+}
+
 export function deriveSafeAvatarTag(info: AvatarInfoLike | null | undefined): SafeAvatarTag | undefined {
   if (!info) {
     return undefined;

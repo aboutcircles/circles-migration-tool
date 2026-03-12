@@ -2,10 +2,11 @@ import { useState, useMemo } from 'react';
 import { Eye, EyeOff, Copy, Check, KeyRound } from 'lucide-react';
 import { entropyToMnemonic } from 'bip39';
 import { useWallet } from '../context/WalletContext';
+import { useCopyToClipboard } from '../hooks/useCopyToClipboard';
 
 export function SeedPhraseDisplay() {
     const [isVisible, setIsVisible] = useState(false);
-    const [copied, setCopied] = useState(false);
+    const { copied, copy } = useCopyToClipboard();
 
     const { seedPhrase, eoaAddress } = useWallet();
 
@@ -27,16 +28,6 @@ export function SeedPhraseDisplay() {
 
     const words = derivedMnemonic.trim().split(/\s+/);
 
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(derivedMnemonic);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy:', err);
-        }
-    };
-
     return (
         <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
@@ -57,7 +48,7 @@ export function SeedPhraseDisplay() {
                         )}
                     </button>
                     <button
-                        onClick={handleCopy}
+                        onClick={() => copy(derivedMnemonic)}
                         className="btn btn-sm btn-ghost btn-circle hover:bg-primary/10"
                         title="Copy seed phrase"
                     >

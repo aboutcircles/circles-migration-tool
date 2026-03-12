@@ -5,10 +5,8 @@ import { TokenBalanceRow } from "@circles-sdk/data";
 import { TrustRelationRow } from "@circles-sdk/data";
 import { Address } from "viem";
 import { Profile } from "@circles-sdk/profiles";
-import { AvatarWithProfile } from "../context/CirclesContext";
 
 interface CirclesOverviewProps {
-    invitationsWithProfiles: AvatarWithProfile[];
     profile: Profile;
     address: Address;
     circlesBalance: TokenBalanceRow[];
@@ -16,7 +14,7 @@ interface CirclesOverviewProps {
 }
 
 
-export function CirclesOverview({ invitationsWithProfiles, profile, address, circlesBalance, trustConnections }: CirclesOverviewProps) {
+export function CirclesOverview({ profile, address, circlesBalance, trustConnections }: CirclesOverviewProps) {
     const totalBalance = circlesBalance.reduce((acc, balance) => acc + balance.circles, 0);
 
     return (
@@ -45,9 +43,6 @@ export function CirclesOverview({ invitationsWithProfiles, profile, address, cir
                     </div>
                 </div>
 
-                <div className={`badge badge-lg ${invitationsWithProfiles.length > 0 ? 'badge-primary' : 'badge-error'} font-medium`}>
-                    {invitationsWithProfiles.length} invitation{invitationsWithProfiles.length !== 1 ? 's' : ''}
-                </div>
             </div>
 
             <div className="divide-y divide-base-300 mt-6 text-sm sm:text-base space-y">

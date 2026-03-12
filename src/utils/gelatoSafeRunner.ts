@@ -1,6 +1,5 @@
 import { BatchRun, SdkContractRunner, TransactionRequest as SdkTransactionRequest, TransactionResponse as SdkTransactionResponse } from "@circles-sdk/adapter";
 import { Address } from "@circles-sdk/utils";
-import { createGelatoEvmRelayerClient, GelatoEvmRelayerClient } from "@gelatocloud/gasless";
 import Safe from "@safe-global/protocol-kit";
 import { BrowserProvider, Eip1193Provider, JsonRpcProvider, Provider } from "ethers";
 import { Hex } from "viem";
@@ -10,9 +9,43 @@ const RELAYER_TIMEOUT_MS = 180000;
 
 type RelayExecutionDeps = {
   safe: Safe;
-  relayerClient: GelatoEvmRelayerClient;
   provider: Provider;
 };
+
+type RelayApiResponse = {
+  transactionHash?: string;
+  error?: string;
+};
+
+async function relayViaBackend(
+  chainId: number,
+  to: Address,
+  data: Hex,
+  avatarAddress: Address,
+): Promise<string> {
+  const response = await fetch("/api/gelato-relay", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chainId,
+      to,
+      data,
+      avatarAddress,
+    }),
+  });
+
+  const payload = await response.json() as RelayApiResponse;
+  if (!response.ok || !payload.transactionHash) {
+    if (response.status === 429) {
+      throw new Error("The relay service is temporarily busy. Please try again in a few minutes.");
+    }
+    throw new Error(payload.error ?? "Failed to relay sponsored transaction.");
+  }
+
+  return payload.transactionHash;
+}
 
 async function mapToSdkResponse(provider: Provider, txHash: string): Promise<SdkTransactionResponse> {
   const receipt = await provider.waitForTransaction(txHash, 1, RELAYER_TIMEOUT_MS);
@@ -69,7 +102,7 @@ class GelatoSafeBatchRun implements BatchRun {
     return this.deps.safe.createTransaction({
       transactions: this.transactions.map((tx) => ({
         to: tx.to,
-        value: tx.value.toString(),
+        value: (tx.value ?? 0n).toString(),
         data: tx.data,
       })),
     });
@@ -91,26 +124,14 @@ class GelatoSafeBatchRun implements BatchRun {
       data = deploymentBatch.data as Hex;
     }
 
-    const receipt = await this.deps.relayerClient.sendTransactionSync(
-      {
-        chainId,
-        to: target,
-        data,
-      },
-      {
-        timeout: RELAYER_TIMEOUT_MS,
-        throwOnReverted: true,
-      }
-    );
-
-    return mapToSdkResponse(this.deps.provider, receipt.transactionHash);
+    const txHash = await relayViaBackend(chainId, target, data, safeAddress as Address);
+    return mapToSdkResponse(this.deps.provider, txHash);
   }
 }
 
 abstract class GelatoSafeContractRunnerBase implements SdkContractRunner {
   address?: Address;
   protected safe?: Safe;
-  protected relayerClient?: GelatoEvmRelayerClient;
   abstract provider: Provider;
 
   abstract init(safeAddress: Address): Promise<void>;
@@ -126,28 +147,17 @@ abstract class GelatoSafeContractRunnerBase implements SdkContractRunner {
   };
 
   sendBatchTransaction = (): BatchRun => {
-    if (!this.safe || !this.relayerClient) {
+    if (!this.safe) {
       throw new Error("Safe runner is not initialized");
     }
 
     return new GelatoSafeBatchRun({
       safe: this.safe,
-      relayerClient: this.relayerClient,
       provider: this.provider,
     });
   };
 
   getSafe = (): Safe | undefined => this.safe;
-
-  protected initializeRelayerClient(apiKey: string | undefined): void {
-    if (!apiKey) {
-      throw new Error("Missing VITE_GELATO_RELAY_API_KEY for sponsored transactions");
-    }
-
-    this.relayerClient = createGelatoEvmRelayerClient({
-      apiKey,
-    });
-  }
 }
 
 export class GelatoSafeSdkPrivateKeyContractRunner extends GelatoSafeContractRunnerBase {
@@ -156,7 +166,6 @@ export class GelatoSafeSdkPrivateKeyContractRunner extends GelatoSafeContractRun
   constructor(
     private readonly privateKey: string,
     private readonly rpcUrl: string,
-    private readonly gelatoApiKey?: string,
   ) {
     super();
     this.provider = new JsonRpcProvider(this.rpcUrl);
@@ -169,7 +178,6 @@ export class GelatoSafeSdkPrivateKeyContractRunner extends GelatoSafeContractRun
       signer: this.privateKey,
       safeAddress,
     });
-    this.initializeRelayerClient(this.gelatoApiKey);
   }
 }
 
@@ -178,7 +186,7 @@ export class GelatoSafeSdkBrowserContractRunner extends GelatoSafeContractRunner
   readonly browserProvider: BrowserProvider;
   readonly eip1193Provider: Eip1193Provider;
 
-  constructor(private readonly gelatoApiKey?: string) {
+  constructor() {
     super();
 
     const injectedProvider = (window as Window & { ethereum?: Eip1193Provider }).ethereum;
@@ -199,6 +207,5 @@ export class GelatoSafeSdkBrowserContractRunner extends GelatoSafeContractRunner
       },
       safeAddress,
     });
-    this.initializeRelayerClient(this.gelatoApiKey);
   }
 }

@@ -10,7 +10,7 @@ import { CopyButton } from './CopyButton';
 import { JsonRpcProvider } from 'ethers';
 import { PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
 import { Sdk } from '@circles-sdk/sdk';
-import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
+import { fetchSafeAvatarTags, SafeAvatarTag, getTagClass } from '../utils/safeAvatarTags';
 
 interface CirclesGardenViewProps {
     onClose?: () => void;
@@ -26,7 +26,7 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
     const [safeAvatarTags, setSafeAvatarTags] = useState<Record<string, SafeAvatarTag>>({});
     const [pendingAccount, setPendingAccount] = useState<{ privateKey: `0x${string}`; account: PrivateKeyAccount; seedPhrase?: string } | null>(null);
     const [isCheckingSafe, setIsCheckingSafe] = useState(false);
-    const { setPkAccount, setSelectedSafeAddress } = useWallet();
+    const { circlesRpcUrl, setPkAccount, setSelectedSafeAddress } = useWallet();
     const wordCount = seedPhrase.trim() ? seedPhrase.trim().split(/\s+/).length : 0;
 
     const toggleVisibility = () => {
@@ -37,8 +37,12 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
         privateKey: `0x${string}`,
         safes: Address[]
     ): Promise<Record<string, SafeAvatarTag>> => {
+        if (!circlesRpcUrl) {
+            return {};
+        }
+
         try {
-            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
+            const rpcProvider = new JsonRpcProvider(circlesRpcUrl);
             const runner = new PrivateKeyContractRunner(rpcProvider, privateKey);
             await runner.init();
             const sdk = new Sdk(runner as any);
@@ -47,12 +51,6 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
             console.warn('Failed to fetch Safe status tags:', error);
             return {};
         }
-    };
-
-    const getTagClass = (tag: SafeAvatarTag): string => {
-        return tag.startsWith("v2")
-            ? "badge-success"
-            : "badge-warning";
     };
 
     const findAndHandleSafes = async (
