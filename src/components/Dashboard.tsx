@@ -10,9 +10,19 @@ import { fallbackProfile } from "../context/CirclesContext";
 import { V1BalanceMigration } from "./V1BalanceMigration";
 import { SeedPhraseDisplay } from "./SeedPhraseDisplay";
 import { AccountLoading } from "./AccountLoading";
-import { Contract, JsonRpcProvider } from "ethers";
+import { requestMigrationFunding, type MigrationFundingStatus } from "../utils/migrationFunding";
+import { getSafeFallbackHandlerStatus, type SafeFallbackHandlerStatus } from "../utils/safeFallbackHandler";
+import {
+    getInitialMigrationState,
+    isPendingV1Avatar,
+    isPendingV1Organization,
+    isSupportedPendingV1Migration,
+    shouldRequestBackendFunding,
+    shouldShowV1BalanceMigration,
+} from "../utils/journey";
 
-type V2TokenEligibility = "unknown" | "checking" | "active" | "missing" | "stopped" | "error";
+type FundingState = "not_needed" | "checking" | MigrationFundingStatus | "error";
+type SafeFallbackState = "not_needed" | "checking" | "valid" | "needs_update" | "error";
 
 export function Dashboard({ address }: { address: Address }) {
     const {
@@ -24,76 +34,58 @@ export function Dashboard({ address }: { address: Address }) {
         invitationValidationError,
         refreshData
     } = useCircles();
-    const { isLoadingSafe, circlesSdkRunner } = useWallet();
+    const { isLoadingSafe, circlesSdkRunner, safeAddress, eoaAddress } = useWallet();
     const [stateStack, setStateStack] = useState<MigrationState[]>(["not-registered"]);
     const [canSelfMigrate, setCanSelfMigrate] = useState(false);
-    const [v2TokenEligibility, setV2TokenEligibility] = useState<V2TokenEligibility>("unknown");
+    const [fundingState, setFundingState] = useState<FundingState>("not_needed");
+    const [fundingError, setFundingError] = useState<string | null>(null);
+    const [safeFallbackState, setSafeFallbackState] = useState<SafeFallbackState>("not_needed");
+    const [safeFallbackError, setSafeFallbackError] = useState<string | null>(null);
+    const [safeFallbackStatus, setSafeFallbackStatus] = useState<SafeFallbackHandlerStatus | null>(null);
     const currentState = stateStack[stateStack.length - 1];
     const avatar = avatarWithProfile?.avatar;
-    const hasV1 = !!avatar?.hasV1;
-    const isV2Avatar = avatar?.version === 2;
-    const isV1AvatarPendingMigration = hasV1 && avatar?.version !== 2;
-    const isV2WithActiveV1Token = hasV1 && isV2Avatar && v2TokenEligibility === "active";
-    const isV1Organization = isV1AvatarPendingMigration && avatarWithProfile?.avatar?.type === "CrcV1_OrganizationSignup";
-    const canExecuteMigrationFlow = isV1AvatarPendingMigration || isV2WithActiveV1Token;
-    const isSupportedMigrationType =
-        avatar?.type === "CrcV1_Signup" || avatar?.type === "CrcV1_OrganizationSignup";
+    const isV1AvatarPendingMigration = isPendingV1Avatar(avatar);
+    const isV1Organization = isPendingV1Organization(avatar);
+    const canExecuteMigrationFlow = isV1AvatarPendingMigration;
+    const isSupportedMigrationType = isSupportedPendingV1Migration(avatar);
+    const requiresBackendFunding = shouldRequestBackendFunding(avatar, safeAddress, eoaAddress);
     const hasBatchSupport =
         typeof (circlesSdkRunner?.contractRunner as { sendBatchTransaction?: unknown } | undefined)?.sendBatchTransaction === "function";
     const needsInviter = isV1AvatarPendingMigration && avatarWithProfile?.avatar?.type === "CrcV1_Signup" && !canSelfMigrate;
+    const isFundingReady =
+        !requiresBackendFunding ||
+        fundingState === "funded" ||
+        fundingState === "already_funded" ||
+        fundingState === "sufficient_balance";
+    const shouldCheckSafeFallback = isV1AvatarPendingMigration && isSupportedMigrationType && hasBatchSupport && isFundingReady;
+    const needsSafeFallbackUpdate = safeFallbackState === "needs_update";
+    const fundingBlockReason = requiresBackendFunding && fundingState === "error"
+        ? fundingError ?? "Could not prepare your account for migration. Please try again."
+        : requiresBackendFunding &&
+          fundingState !== "funded" &&
+          fundingState !== "already_funded" &&
+          fundingState !== "sufficient_balance"
+            ? "Preparing your account for migration. Please wait."
+            : null;
+    const safeFallbackBlockReason = safeFallbackState === "error"
+        ? safeFallbackError ?? "Could not check your Safe compatibility. Please try again."
+        : null;
     const migrationBlockReason = isV1AvatarPendingMigration && !isSupportedMigrationType
         ? `Avatar type ${avatar?.type ?? "unknown"} is not supported for migration in this app.`
         : canExecuteMigrationFlow && !hasBatchSupport
             ? "Migration is not supported by the current wallet runner (batch transactions unavailable). Please switch wallet/safe and try again."
+            : fundingBlockReason ?? safeFallbackBlockReason;
+    const accountPreparationStatusMessage = requiresBackendFunding && fundingState === "funded"
+        ? "Your account is ready for migration."
+        : requiresBackendFunding && fundingState === "already_funded"
+            ? "Your account is ready for migration."
+            : requiresBackendFunding && fundingState === "sufficient_balance"
+            ? "Your account is ready for migration."
             : null;
-    const hasMigratedAvatar = currentState === "migrated" || isV2WithActiveV1Token;
-    const hasV1Balances = (circlesBalance || []).some(
-        (balance) => balance.version === 1 && BigInt(balance.attoCrc) > 0n
-    );
-    const showBalanceMigration = hasMigratedAvatar && hasV1Balances;
-    const isCheckingV2TokenEligibility = hasV1 && isV2Avatar && (v2TokenEligibility === "unknown" || v2TokenEligibility === "checking");
-
-    useEffect(() => {
-        let isCancelled = false;
-
-        const checkV2TokenEligibility = async () => {
-            if (!circlesSdkRunner || !avatar?.hasV1 || avatar.version !== 2) {
-                setV2TokenEligibility("unknown");
-                return;
-            }
-
-            if (!avatar.v1Token) {
-                setV2TokenEligibility("missing");
-                return;
-            }
-
-            if (typeof avatar.v1Stopped === "boolean") {
-                setV2TokenEligibility(avatar.v1Stopped ? "stopped" : "active");
-                return;
-            }
-
-            setV2TokenEligibility("checking");
-            try {
-                const provider = new JsonRpcProvider(circlesSdkRunner.circlesConfig.circlesRpcUrl);
-                const v1Token = new Contract(avatar.v1Token, ["function stopped() view returns (bool)"], provider);
-                const isStopped = await v1Token.stopped();
-                if (!isCancelled) {
-                    setV2TokenEligibility(isStopped ? "stopped" : "active");
-                }
-            } catch (error) {
-                console.warn("Failed to check v1 token status for v2 avatar:", error);
-                if (!isCancelled) {
-                    setV2TokenEligibility("error");
-                }
-            }
-        };
-
-        checkV2TokenEligibility();
-
-        return () => {
-            isCancelled = true;
-        };
-    }, [avatar, circlesSdkRunner]);
+    const safeFallbackStatusMessage = safeFallbackStatus?.currentFallbackHandler
+        ? `Current fallback handler: ${safeFallbackStatus.currentFallbackHandler}`
+        : null;
+    const showBalanceMigration = shouldShowV1BalanceMigration(avatar, currentState, circlesBalance || []);
 
     useEffect(() => {
         if (!avatarWithProfile?.avatar) {
@@ -101,18 +93,8 @@ export function Dashboard({ address }: { address: Address }) {
             return;
         }
 
-        let newState: MigrationState;
-
-        if (!avatarWithProfile.avatar.hasV1) {
-            newState = avatarWithProfile.avatar.version === 2 ? "registered-v2" : "not-registered";
-        } else if (avatarWithProfile.avatar.version === 2) {
-            newState = v2TokenEligibility === "active" ? "ready-to-migrate" : "registered-v2";
-        } else {
-            newState = "ready-to-migrate";
-        }
-
-        setStateStack([newState]);
-    }, [avatarWithProfile, v2TokenEligibility]);
+        setStateStack([getInitialMigrationState(avatarWithProfile.avatar)]);
+    }, [avatarWithProfile]);
 
     useEffect(() => {
         let isCancelled = false;
@@ -148,6 +130,96 @@ export function Dashboard({ address }: { address: Address }) {
         };
     }, [avatarWithProfile, circlesSdkRunner]);
 
+    useEffect(() => {
+        if (!requiresBackendFunding || !safeAddress || !eoaAddress) {
+            setFundingState("not_needed");
+            setFundingError(null);
+            return;
+        }
+
+        const controller = new AbortController();
+        setFundingState("checking");
+        setFundingError(null);
+
+        requestMigrationFunding(safeAddress, eoaAddress, controller.signal)
+            .then((result) => {
+                setFundingState(result.status);
+            })
+            .catch((error) => {
+                if (controller.signal.aborted) {
+                    return;
+                }
+                const message = error instanceof Error
+                    ? error.message
+                    : "Could not prepare your account for migration. Please try again.";
+                setFundingState("error");
+                setFundingError(message);
+                console.error("Account preparation request failed:", error);
+            });
+
+        return () => {
+            controller.abort();
+        };
+    }, [requiresBackendFunding, safeAddress, eoaAddress]);
+
+    const refreshSafeFallbackStatus = async () => {
+        if (!circlesSdkRunner || !shouldCheckSafeFallback) {
+            setSafeFallbackState("not_needed");
+            setSafeFallbackError(null);
+            setSafeFallbackStatus(null);
+            return;
+        }
+
+        setSafeFallbackState("checking");
+        setSafeFallbackError(null);
+
+        const status = await getSafeFallbackHandlerStatus(circlesSdkRunner);
+        setSafeFallbackStatus(status);
+        setSafeFallbackState(status.needsUpdate ? "needs_update" : "valid");
+    };
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const checkSafeFallback = async () => {
+            if (!circlesSdkRunner || !shouldCheckSafeFallback) {
+                setSafeFallbackState("not_needed");
+                setSafeFallbackError(null);
+                setSafeFallbackStatus(null);
+                return;
+            }
+
+            setSafeFallbackState("checking");
+            setSafeFallbackError(null);
+
+            try {
+                const status = await getSafeFallbackHandlerStatus(circlesSdkRunner);
+                if (isCancelled) {
+                    return;
+                }
+                setSafeFallbackStatus(status);
+                setSafeFallbackState(status.needsUpdate ? "needs_update" : "valid");
+            } catch (error) {
+                if (isCancelled) {
+                    return;
+                }
+                const message = error instanceof Error
+                    ? error.message
+                    : "Could not check your Safe compatibility. Please try again.";
+                setSafeFallbackState("error");
+                setSafeFallbackError(message);
+                setSafeFallbackStatus(null);
+                console.error("Safe fallback handler check failed:", error);
+            }
+        };
+
+        checkSafeFallback();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [circlesSdkRunner, shouldCheckSafeFallback]);
+
     const pushState = (newState: MigrationState) => {
         setStateStack(prev => [...prev, newState]);
     };
@@ -159,14 +231,18 @@ export function Dashboard({ address }: { address: Address }) {
     const canGoBack = stateStack.length > 1;
     const showStepper = ["ready-to-migrate", "selecting-inviter", "create-profile", "execute-migration"].includes(currentState);
 
-    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner || isCheckingV2TokenEligibility) {
-        const loadingTitle = isCheckingV2TokenEligibility
-            ? "Checking v1 token status"
+    if (isLoadingAvatarData || isLoadingSafe || !circlesSdkRunner || fundingState === "checking" || safeFallbackState === "checking") {
+        const loadingTitle = fundingState === "checking"
+            ? "Preparing your account"
+            : safeFallbackState === "checking"
+            ? "Checking Safe compatibility"
             : isLoadingSafe
             ? "Switching to selected Safe"
             : "Loading your Circles account";
-        const loadingDescription = isCheckingV2TokenEligibility
-            ? "Verifying whether your v2 avatar still has an active v1 token."
+        const loadingDescription = fundingState === "checking"
+            ? "Preparing your account for migration."
+            : safeFallbackState === "checking"
+            ? "Checking whether your v1 Safe fallback handler needs an update."
             : isLoadingSafe
             ? "Applying your Safe selection and syncing account context."
             : "Fetching profile, balances, trust relations, and invitations.";
@@ -182,7 +258,11 @@ export function Dashboard({ address }: { address: Address }) {
     return (
         <div className="max-w-4xl w-full mx-auto p-2 space-y-6">
             {showStepper && (
-                <MigrationStepper currentState={currentState} needsInviter={needsInviter} />
+                <MigrationStepper
+                    currentState={currentState}
+                    needsInviter={needsInviter}
+                    needsSafeFallbackUpdate={needsSafeFallbackUpdate}
+                />
             )}
 
             {canGoBack && (
@@ -210,6 +290,10 @@ export function Dashboard({ address }: { address: Address }) {
                 isV1Organization={isV1Organization}
                 invitationValidationError={invitationValidationError}
                 migrationBlockReason={migrationBlockReason}
+                accountPreparationStatusMessage={accountPreparationStatusMessage}
+                needsSafeFallbackUpdate={needsSafeFallbackUpdate}
+                safeFallbackStatusMessage={safeFallbackStatusMessage}
+                onSafeFallbackUpdated={refreshSafeFallbackStatus}
             />
 
             {showBalanceMigration && (

@@ -2,6 +2,7 @@ import { Sdk } from "@circles-sdk/sdk";
 import { Profile } from "@circles-sdk/profiles";
 import { Address, cidV0ToUint8Array } from "@circles-sdk/utils";
 import { Contract, JsonRpcProvider, ZeroAddress } from "ethers";
+import { getSdkChainRpcUrl } from "./rpc";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -107,7 +108,7 @@ export async function migrateAvatarWithoutBalances(
   const batch = contractRunner.sendBatchTransaction();
 
   if (avatarInfo.v1Token) {
-    const provider = new JsonRpcProvider(sdk.circlesConfig.circlesRpcUrl);
+    const provider = new JsonRpcProvider(getSdkChainRpcUrl(sdk));
     const v1Token = new Contract(avatarInfo.v1Token, [
       "function stopped() view returns (bool)",
       "function update()",

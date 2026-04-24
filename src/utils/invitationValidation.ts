@@ -1,6 +1,7 @@
 import { Sdk } from "@circles-sdk/sdk";
 import { Address } from "viem";
 import { JsonRpcProvider } from "ethers";
+import { getSdkChainRpcUrl } from "./rpc";
 
 const DUMMY_METADATA_DIGEST = `0x${"11".repeat(32)}` as `0x${string}`;
 
@@ -60,7 +61,7 @@ export async function validateHumanRegistrationWithInviter(
   }
 
   try {
-    const provider = new JsonRpcProvider(sdk.circlesConfig.circlesRpcUrl);
+    const provider = new JsonRpcProvider(getSdkChainRpcUrl(sdk));
     const data = sdk.v2Hub.interface.encodeFunctionData("registerHuman", [
       inviterAddress,
       DUMMY_METADATA_DIGEST,
