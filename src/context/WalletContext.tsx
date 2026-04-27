@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode, useEffect, useRef, useState } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import { NETWORK_CONFIG } from '../constants/networks';
+import { GNOSIS_CHAIN_RPC_URL, NETWORK_CONFIG } from '../constants/networks';
 import { NetworkConfig } from '../types/network';
 import { Address, PrivateKeyAccount } from 'viem';
 import { gnosis } from 'viem/chains';
@@ -8,11 +8,8 @@ import { JsonRpcProvider } from 'ethers';
 import { findSafesFromSigner } from '../utils/safeDerivation';
 import { Sdk } from '@circles-sdk/sdk';
 import { BrowserProviderContractRunner, PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
+import { SafeSdkBrowserContractRunner, SafeSdkPrivateKeyContractRunner } from '@circles-sdk/adapter-safe';
 import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
-import {
-  GelatoSafeSdkBrowserContractRunner,
-  GelatoSafeSdkPrivateKeyContractRunner,
-} from '../utils/gelatoSafeRunner';
 
 interface WalletContextType {
   account: {
@@ -56,7 +53,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const chainId = pkAccount ? gnosis.id : wagmiAccount?.chainId;
   const chainName = pkAccount ? gnosis.name : wagmiAccount?.chain?.name;
   const network = chainId ? NETWORK_CONFIG[chainId] : undefined;
-  const gelatoApiKey = (import.meta.env.VITE_GELATO_RELAY_API_KEY as string | undefined)?.trim() || undefined;
 
   const signerAddress = pkAccount?.account.address || wagmiAccount.address;
 
@@ -135,27 +131,26 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (nextSafeAddress) {
 
           if (pkAccount) {
-            runner = new GelatoSafeSdkPrivateKeyContractRunner(
+            runner = new SafeSdkPrivateKeyContractRunner(
               pkAccount.privateKey,
-              'https://rpc.circlesubi.network',
-              gelatoApiKey
+              GNOSIS_CHAIN_RPC_URL
             );
             await runner.init(nextSafeAddress as `0x${string}`);
             if (isStale()) {
               return;
             }
           } else {
-            runner = new GelatoSafeSdkBrowserContractRunner(gelatoApiKey);
+            runner = new SafeSdkBrowserContractRunner();
             await runner.init(nextSafeAddress as `0x${string}`);
             if (isStale()) {
               return;
             }
           }
-          sdk = new Sdk(runner as any);
+          sdk = new Sdk(runner as any, network as any);
           setCirclesSdkRunner(sdk);
         } else {
           if (pkAccount) {
-            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
+            const rpcProvider = new JsonRpcProvider(GNOSIS_CHAIN_RPC_URL);
             runner = new PrivateKeyContractRunner(rpcProvider, pkAccount.privateKey);
             await runner.init();
             if (isStale()) {
@@ -168,7 +163,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
               return;
             }
           }
-          sdk = new Sdk(runner as any);
+          sdk = new Sdk(runner as any, network as any);
           setCirclesSdkRunner(sdk);
         }
 

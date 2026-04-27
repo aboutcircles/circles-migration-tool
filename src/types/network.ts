@@ -1,6 +1,7 @@
 import { Chain } from "viem";
 
 export interface NetworkConfig extends Chain {
+    chainRpcUrl: string;
     circlesRpcUrl: string;
     profileServiceUrl: string;
     v1HubAddress: `0x${string}`;

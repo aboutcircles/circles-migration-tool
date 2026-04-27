@@ -11,6 +11,8 @@ import { JsonRpcProvider } from 'ethers';
 import { PrivateKeyContractRunner } from '@circles-sdk/adapter-ethers';
 import { Sdk } from '@circles-sdk/sdk';
 import { fetchSafeAvatarTags, SafeAvatarTag } from '../utils/safeAvatarTags';
+import { GNOSIS_CHAIN_RPC_URL, NETWORK_CONFIG } from '../constants/networks';
+import { gnosis } from 'viem/chains';
 
 interface CirclesGardenViewProps {
     onClose?: () => void;
@@ -38,10 +40,10 @@ export function CirclesGardenView({ onClose }: CirclesGardenViewProps) {
         safes: Address[]
     ): Promise<Record<string, SafeAvatarTag>> => {
         try {
-            const rpcProvider = new JsonRpcProvider('https://rpc.circlesubi.network');
+            const rpcProvider = new JsonRpcProvider(GNOSIS_CHAIN_RPC_URL);
             const runner = new PrivateKeyContractRunner(rpcProvider, privateKey);
             await runner.init();
-            const sdk = new Sdk(runner as any);
+            const sdk = new Sdk(runner as any, NETWORK_CONFIG[gnosis.id] as any);
             return await fetchSafeAvatarTags(sdk, safes);
         } catch (error) {
             console.warn('Failed to fetch Safe status tags:', error);

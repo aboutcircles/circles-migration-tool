@@ -5,18 +5,21 @@ import { Check } from "lucide-react";
 interface MigrationStepperProps {
     currentState: MigrationState;
     needsInviter: boolean;
+    needsSafeFallbackUpdate: boolean;
 }
 
-export function MigrationStepper({ currentState, needsInviter }: MigrationStepperProps) {
+export function MigrationStepper({ currentState, needsInviter, needsSafeFallbackUpdate }: MigrationStepperProps) {
     const steps: { state: MigrationState; label: string }[] = needsInviter
         ? [
             { state: "ready-to-migrate", label: "Start" },
+            ...(needsSafeFallbackUpdate ? [{ state: "update-safe-fallback" as MigrationState, label: "Update Safe" }] : []),
             { state: "selecting-inviter", label: "Choose Inviter" },
             { state: "create-profile", label: "Create Profile" },
             { state: "execute-migration", label: "Execute" },
         ]
         : [
             { state: "ready-to-migrate", label: "Start" },
+            ...(needsSafeFallbackUpdate ? [{ state: "update-safe-fallback" as MigrationState, label: "Update Safe" }] : []),
             { state: "create-profile", label: "Create Profile" },
             { state: "execute-migration", label: "Execute" },
         ];

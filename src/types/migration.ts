@@ -4,6 +4,7 @@ export type MigrationState =
   | "registered-v2"
   | "migrated"
   | "ready-to-migrate" 
+  | "update-safe-fallback"
   | "selecting-inviter"
   | "create-profile"
   | "execute-migration";

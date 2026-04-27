@@ -5,6 +5,7 @@ import { Profile } from "@circles-sdk/profiles";
 import { MigrationState } from "../types/migration";
 import { validateHumanRegistrationWithInviter } from "../utils/invitationValidation";
 import { hasAnyMigratableV1Balances, isNoBalancesRpcError, migrateAvatarWithoutBalances } from "../utils/migrationFallback";
+import { updateSafeFallbackHandlerIfNeeded } from "../utils/safeFallbackHandler";
 
 type Ctx = {
     address: Address;
@@ -15,6 +16,7 @@ type Ctx = {
     draftProfile: Profile;
     profileErrors: string[];
     selectedTrustRelations: Address[];
+    needsSafeFallbackUpdate: boolean;
 };
 
 type Step = {
@@ -60,6 +62,21 @@ export const STEP_CONFIG: Record<MigrationState, Step> = {
         title: "Migrate to V2",
         description: "Your v1 account is ready to be migrated to v2",
         cta: "Start migration",
+        next: ({ needsSafeFallbackUpdate, needsInviter }) =>
+            needsSafeFallbackUpdate
+                ? "update-safe-fallback"
+                : needsInviter
+                    ? "selecting-inviter"
+                    : "create-profile",
+    },
+    "update-safe-fallback": {
+        id: "update-safe-fallback",
+        title: "Update Safe Compatibility",
+        description: "Your v1 Safe needs a compatibility update before migration can continue",
+        cta: "Update Safe",
+        onNext: async ({ sdk }) => {
+            await updateSafeFallbackHandlerIfNeeded(sdk);
+        },
         next: ({ needsInviter }) => needsInviter ? "selecting-inviter" : "create-profile",
     },
     "registered-v2": {

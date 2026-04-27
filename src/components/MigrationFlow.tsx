@@ -28,6 +28,10 @@ interface MigrationFlowProps {
     isV1Organization: boolean;
     invitationValidationError: string | null;
     migrationBlockReason: string | null;
+    accountPreparationStatusMessage: string | null;
+    needsSafeFallbackUpdate: boolean;
+    safeFallbackStatusMessage: string | null;
+    onSafeFallbackUpdated: () => Promise<void>;
 }
 
 export function MigrationFlow({
@@ -44,6 +48,10 @@ export function MigrationFlow({
     isV1Organization,
     invitationValidationError,
     migrationBlockReason,
+    accountPreparationStatusMessage,
+    needsSafeFallbackUpdate,
+    safeFallbackStatusMessage,
+    onSafeFallbackUpdated,
 }: MigrationFlowProps) {
     const [selectedInviter, setSelectedInviter] = useState<`0x${string}` | null>(null);
     const [draftProfile, setDraftProfile] = useState<Profile>({ name: "", description: "", previewImageUrl: "", imageUrl: "" });
@@ -76,6 +84,7 @@ export function MigrationFlow({
         draftProfile,
         profileErrors,
         selectedTrustRelations,
+        needsSafeFallbackUpdate,
     };
 
     const step = STEP_CONFIG[state];
@@ -92,17 +101,21 @@ export function MigrationFlow({
             setIsProcessing(true);
             if (step.onNext) {
                 await toast.promise(step.onNext(ctx), {
-                    loading: "Migrating avatar…",
-                    success: "Migration complete!",
+                    loading: state === "update-safe-fallback" ? "Updating Safe…" : "Migrating avatar…",
+                    success: state === "update-safe-fallback" ? "Safe updated!" : "Migration complete!",
                     error: (error) => error instanceof Error
                         ? error.message
                         : "Migration failed, please reach out to support on Discord",
                 });
 
-                try {
-                    await refreshData();
-                } catch (refreshError) {
-                    console.warn("Migration succeeded but refresh failed:", refreshError);
+                if (state === "update-safe-fallback") {
+                    await onSafeFallbackUpdated();
+                } else {
+                    try {
+                        await refreshData();
+                    } catch (refreshError) {
+                        console.warn("Migration succeeded but refresh failed:", refreshError);
+                    }
                 }
             }
 
@@ -151,8 +164,25 @@ export function MigrationFlow({
                     />
                 )}
 
+                {state === "update-safe-fallback" && (
+                    <div className="space-y-4">
+                        <div className="alert alert-warning rounded-xl">
+                            <span>
+                                This Safe has an outdated fallback handler. Update it first, then continue with migration.
+                            </span>
+                        </div>
+                        {safeFallbackStatusMessage && (
+                            <p className="text-sm text-base-content/70">
+                                {safeFallbackStatusMessage}
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {state !== "selecting-inviter" && state !== "create-profile" && state !== "execute-migration" && (
-                    <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
+                    state !== "update-safe-fallback" && (
+                        <CirclesOverview invitationsWithProfiles={invitationsWithProfiles} profile={profile} address={address} circlesBalance={circlesBalance} trustConnections={trustConnections} />
+                    )
                 )}
 
                 <div className="flex flex-col items-center space-y-3 mt-8">
@@ -183,6 +213,12 @@ export function MigrationFlow({
                     {state === "ready-to-migrate" && migrationBlockReason && (
                         <div className="alert alert-error rounded-xl w-full max-w-xl">
                             <span>{migrationBlockReason}</span>
+                        </div>
+                    )}
+
+                    {state === "ready-to-migrate" && accountPreparationStatusMessage && !migrationBlockReason && (
+                        <div className="alert alert-success rounded-xl w-full max-w-xl">
+                            <span>{accountPreparationStatusMessage}</span>
                         </div>
                     )}
 
