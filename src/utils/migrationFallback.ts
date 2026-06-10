@@ -4,7 +4,7 @@ import { Address, cidV0ToUint8Array } from "@circles-sdk/utils";
 import { Contract, JsonRpcProvider, ZeroAddress } from "ethers";
 import { getSdkChainRpcUrl } from "./rpc";
 
-function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
   }

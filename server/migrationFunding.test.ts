@@ -47,6 +47,7 @@ describe("MigrationFundingService", () => {
     data = {
       findSafesByOwner: vi.fn().mockResolvedValue([SAFE]),
       getAvatarInfo: vi.fn().mockResolvedValue(v1HumanAvatar()),
+      hasV1TokenBalances: vi.fn().mockResolvedValue(false),
     };
     funder = { getBalance, send };
   });
@@ -86,7 +87,7 @@ describe("MigrationFundingService", () => {
     expect(send).not.toHaveBeenCalled();
   });
 
-  it("rejects Safes that are not supported pending v1 users", async () => {
+  it("rejects v2 Safes without v1 token balances", async () => {
     vi.mocked(data.getAvatarInfo).mockResolvedValue(
       v1HumanAvatar({ version: 2, type: "CrcV2_RegisterHuman" }),
     );
@@ -97,6 +98,29 @@ describe("MigrationFundingService", () => {
     ).rejects.toMatchObject<HttpError>({ statusCode: 403 });
 
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it("funds already-migrated v2 Safes that still hold v1 token balances", async () => {
+    vi.mocked(data.getAvatarInfo).mockResolvedValue(
+      v1HumanAvatar({ version: 2, type: "CrcV2_RegisterHuman" }),
+    );
+    vi.mocked(data.hasV1TokenBalances).mockResolvedValue(true);
+    const service = createService();
+
+    await expect(
+      service.requestFunding({ safeAddress: SAFE, eoaAddress: EOA }),
+    ).resolves.toEqual({ status: "funded" });
+
+    expect(send).toHaveBeenCalledOnce();
+    expect(send).toHaveBeenCalledWith(EOA, FUNDING_AMOUNT);
+  });
+
+  it("does not check token balances for pending v1 users", async () => {
+    const service = createService();
+
+    await service.requestFunding({ safeAddress: SAFE, eoaAddress: EOA });
+
+    expect(data.hasV1TokenBalances).not.toHaveBeenCalled();
   });
 
   it("sends 0.01 xDAI when the EOA balance is below 0.01 xDAI", async () => {

@@ -3,6 +3,12 @@ import { Address } from "viem";
 import { TokenBalanceRow } from "@circles-sdk/data";
 import { Sdk } from "@circles-sdk/sdk";
 import { truncateAddress } from "../utils/address";
+import {
+    ClassifiedBalance,
+    classifyV1Balances,
+    getMigrationErrorMessage,
+    getV1TokenBalances,
+} from "../utils/v1TokenMigration";
 import toast from "react-hot-toast";
 
 interface V1BalanceMigrationProps {
@@ -10,14 +16,6 @@ interface V1BalanceMigrationProps {
     circlesBalance: TokenBalanceRow[];
     circlesSdkRunner: Sdk;
     onMigrationComplete?: () => Promise<void>;
-}
-
-interface ClassifiedBalance {
-    tokenAddress: string;
-    tokenOwner: string;
-    attoCrc: string;
-    circles: number;
-    ownerVersion: number | null;
 }
 
 export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, onMigrationComplete }: V1BalanceMigrationProps) {
@@ -30,9 +28,7 @@ export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, 
     const [migrationComplete, setMigrationComplete] = useState(false);
 
     const checkEligibility = useCallback(async () => {
-        const v1Balances = circlesBalance.filter(
-            (b) => b.version === 1 && BigInt(b.attoCrc) > 0n
-        );
+        const v1Balances = getV1TokenBalances(circlesBalance);
 
         if (v1Balances.length === 0) {
             setEligibleBalances([]);
@@ -46,33 +42,7 @@ export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, 
         try {
             const uniqueOwners = [...new Set(v1Balances.map((b) => b.tokenOwner.toLowerCase() as `0x${string}`))];
             const ownerInfos = await circlesSdkRunner.data.getAvatarInfoBatch(uniqueOwners);
-            const ownerVersionMap = new Map(
-                ownerInfos.map((info) => [info.avatar.toLowerCase(), info.version])
-            );
-
-            const eligible: ClassifiedBalance[] = [];
-            const ineligible: ClassifiedBalance[] = [];
-
-            for (const balance of v1Balances) {
-                const ownerLower = balance.tokenOwner.toLowerCase();
-                const isSelf = ownerLower === address.toLowerCase();
-                const ownerVersion = ownerVersionMap.get(ownerLower) ?? null;
-                const canMigrate = isSelf || ownerVersion === 2;
-
-                const row: ClassifiedBalance = {
-                    tokenAddress: balance.tokenAddress.toLowerCase(),
-                    tokenOwner: balance.tokenOwner.toLowerCase(),
-                    attoCrc: balance.attoCrc,
-                    circles: balance.circles,
-                    ownerVersion,
-                };
-
-                if (canMigrate) {
-                    eligible.push(row);
-                } else {
-                    ineligible.push(row);
-                }
-            }
+            const { eligible, ineligible } = classifyV1Balances(v1Balances, ownerInfos, address);
 
             setEligibleBalances(eligible);
             setIneligibleBalances(ineligible);
@@ -101,11 +71,12 @@ export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, 
         try {
             const tokenAddresses = Array.from(selectedTokens) as `0x${string}`[];
             await toast.promise(
-                circlesSdkRunner.migrateV1Tokens(address as `0x${string}`, tokenAddresses),
+                circlesSdkRunner.migrateV1TokensBatch(address as `0x${string}`, tokenAddresses),
                 {
                     loading: "Migrating v1 token balances\u2026",
                     success: "Token balance migration complete!",
-                    error: () => "Token migration failed, please reach out to support on Discord",
+                    error: (error) =>
+                        `Token migration failed: ${getMigrationErrorMessage(error)}. Please reach out to support on Discord if the problem persists.`,
                 }
             );
             setMigrationComplete(true);
@@ -232,7 +203,7 @@ export function V1BalanceMigration({ address, circlesBalance, circlesSdkRunner, 
                             Not Yet Eligible ({ineligibleBalances.length})
                         </h3>
                         <p className="text-sm text-base-content/40 mb-4">
-                            These tokens cannot be migrated yet because their owners have not migrated to v2.
+                            These tokens cannot be migrated because their owners are not registered as humans on Circles v2.
                         </p>
                         <div className="divide-y divide-base-300 border border-base-300 rounded-xl overflow-hidden opacity-60">
                             {ineligibleBalances.map((balance) => (

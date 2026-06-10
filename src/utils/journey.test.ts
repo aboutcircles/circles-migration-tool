@@ -65,6 +65,18 @@ describe("migration journey routing", () => {
     ).toBe("registered-v2");
   });
 
+  it("requests backend funding for v2 avatars that still hold v1 token balances", () => {
+    const v2Avatar = { hasV1: true, version: 2, type: "CrcV2_RegisterHuman" };
+    const v1Balances = [balance(1, "1000000000000000000")];
+
+    expect(shouldRequestBackendFunding(v2Avatar, SAFE, EOA, v1Balances)).toBe(true);
+    expect(shouldRequestBackendFunding(v2Avatar, SAFE, EOA, [])).toBe(false);
+    expect(shouldRequestBackendFunding(v2Avatar, SAFE, EOA, [balance(1, "0")])).toBe(false);
+    expect(shouldRequestBackendFunding(v2Avatar, SAFE, EOA, [balance(2, "1000000000000000000")])).toBe(false);
+    expect(shouldRequestBackendFunding(v2Avatar, undefined, EOA, v1Balances)).toBe(false);
+    expect(shouldRequestBackendFunding(v2Avatar, SAFE, undefined, v1Balances)).toBe(false);
+  });
+
   it("shows v1 balance migration only for migrated or v2 avatars with positive v1 balances", () => {
     const v2Avatar = { hasV1: true, version: 2, type: "CrcV2_RegisterHuman" };
     const v1Avatar = { hasV1: true, version: 1, type: "CrcV1_Signup" };

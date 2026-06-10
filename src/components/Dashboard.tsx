@@ -48,7 +48,7 @@ export function Dashboard({ address }: { address: Address }) {
     const isV1Organization = isPendingV1Organization(avatar);
     const canExecuteMigrationFlow = isV1AvatarPendingMigration;
     const isSupportedMigrationType = isSupportedPendingV1Migration(avatar);
-    const requiresBackendFunding = shouldRequestBackendFunding(avatar, safeAddress, eoaAddress);
+    const requiresBackendFunding = shouldRequestBackendFunding(avatar, safeAddress, eoaAddress, circlesBalance || []);
     const hasBatchSupport =
         typeof (circlesSdkRunner?.contractRunner as { sendBatchTransaction?: unknown } | undefined)?.sendBatchTransaction === "function";
     const needsInviter = isV1AvatarPendingMigration && avatarWithProfile?.avatar?.type === "CrcV1_Signup" && !canSelfMigrate;

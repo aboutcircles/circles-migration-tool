@@ -5,6 +5,7 @@ import {
   type AvatarRow,
   type Namespace,
   type Table,
+  type TokenBalanceRow,
 } from "@circles-sdk/data";
 import type { Address } from "viem";
 
@@ -15,6 +16,7 @@ type SafeOwnerRow = {
 export interface MigrationVerificationData {
   findSafesByOwner(ownerAddress: Address): Promise<Address[]>;
   getAvatarInfo(avatarAddress: Address): Promise<AvatarRow | undefined>;
+  hasV1TokenBalances(avatarAddress: Address): Promise<boolean>;
 }
 
 export class CirclesMigrationVerificationData implements MigrationVerificationData {
@@ -44,6 +46,23 @@ export class CirclesMigrationVerificationData implements MigrationVerificationDa
 
   async getAvatarInfo(avatarAddress: Address): Promise<AvatarRow | undefined> {
     return this.data.getAvatarInfo(avatarAddress);
+  }
+
+  async hasV1TokenBalances(avatarAddress: Address): Promise<boolean> {
+    let balances: TokenBalanceRow[];
+    try {
+      balances = await this.data.getTokenBalances(avatarAddress.toLowerCase() as Address);
+    } catch (error) {
+      // The Circles RPC reports avatars without any balances as an error.
+      if (error instanceof Error && error.message.toLowerCase().includes("no balances found")) {
+        return false;
+      }
+      throw error;
+    }
+
+    return balances.some(
+      (balance) => balance.version === 1 && BigInt(balance.attoCrc) > 0n,
+    );
   }
 
   private async querySafesByOwner(ownerAddress: Address): Promise<Address[]> {

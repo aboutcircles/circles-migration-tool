@@ -73,12 +73,19 @@ export class MigrationFundingService {
       throw new HttpError(403, "Submitted Safe is not a Circles avatar");
     }
 
-    if (
-      !avatarInfo.hasV1 ||
-      avatarInfo.version !== 1 ||
-      (avatarInfo.type !== "CrcV1_Signup" && avatarInfo.type !== "CrcV1_OrganizationSignup")
-    ) {
-      throw new HttpError(403, "Submitted Safe is not a supported pending v1 user");
+    const isPendingV1User =
+      avatarInfo.hasV1 &&
+      avatarInfo.version === 1 &&
+      (avatarInfo.type === "CrcV1_Signup" || avatarInfo.type === "CrcV1_OrganizationSignup");
+
+    // Already-migrated v2 accounts still need gas to migrate leftover v1 token balances.
+    const isV2UserWithV1Balances =
+      !isPendingV1User &&
+      avatarInfo.version === 2 &&
+      (await this.deps.data.hasV1TokenBalances(safeAddress));
+
+    if (!isPendingV1User && !isV2UserWithV1Balances) {
+      throw new HttpError(403, "Submitted Safe is not eligible for migration funding");
     }
 
     const currentBalance = await this.deps.funder.getBalance(eoaAddress);

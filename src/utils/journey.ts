@@ -50,8 +50,17 @@ export function shouldRequestBackendFunding(
   avatar: AvatarJourneyInfo | undefined,
   safeAddress: Address | undefined,
   eoaAddress: Address | undefined,
+  circlesBalance: TokenBalanceRow[] = [],
 ): boolean {
-  return Boolean(safeAddress && eoaAddress && isSupportedPendingV1Migration(avatar));
+  if (!safeAddress || !eoaAddress) {
+    return false;
+  }
+
+  // v2 accounts that still hold v1 token balances need gas for the token migration.
+  return (
+    isSupportedPendingV1Migration(avatar) ||
+    (avatar?.version === 2 && hasV1TokenBalances(circlesBalance))
+  );
 }
 
 export function shouldShowV1BalanceMigration(
